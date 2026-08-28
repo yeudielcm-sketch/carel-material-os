@@ -113,10 +113,18 @@ function getSheet() {
     sh.getRange(1, 1, 1, COLS.length).setFontWeight("bold");
     return sh;
   }
-  // Hoja de la v1: le faltan columnas. Se añaden sin tocar lo que ya hay.
-  var ancho = Math.max(sh.getLastColumn(), 1);
-  var cab = sh.getRange(1, 1, 1, ancho).getValues()[0];
-  if (cab.length < COLS.length || String(cab[2]) !== COLS[2]) {
+  // El encabezado se rehace si NO coincide entero. Se compara columna por
+  // columna a propósito: basta que alguien teclee encima de una celda de la
+  // fila 1 para dejarlo mal, y mirar solo una no lo detecta.
+  if (sh.getMaxColumns() < COLS.length) {
+    sh.insertColumnsAfter(sh.getMaxColumns(), COLS.length - sh.getMaxColumns());
+  }
+  var cab = sh.getRange(1, 1, 1, COLS.length).getValues()[0];
+  var iguales = true;
+  for (var i = 0; i < COLS.length; i++) {
+    if (String(cab[i]) !== COLS[i]) { iguales = false; break; }
+  }
+  if (!iguales) {
     sh.getRange(1, 1, 1, COLS.length).setValues([COLS]).setFontWeight("bold");
     sh.setFrozenRows(1);
   }
