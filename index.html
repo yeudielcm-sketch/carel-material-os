@@ -521,14 +521,20 @@
       STATE.catalogos = d.catalogos || {};
       if(d.indice) STATE.indice = d.indice;
       renderTodo();
-      qs("banner-top").innerHTML = "";
+      // Solo se quita el aviso de conexión. El "Capturado con éxito" tiene que
+      // sobrevivir al refresco: si no, el técnico guarda y no ve nada.
+      var b = qs("banner-top");
+      if(b.querySelector("[data-conn]")) b.innerHTML = "";
     }).catch(function(){
       qs("banner-top").innerHTML = banner("danger",
-        "No se pudo conectar con el guardado — revisa tu señal. Lo que escribas no se pierde.");
+        "No se pudo conectar con el guardado — revisa tu señal. Lo que escribas no se pierde.",
+        "conn");
     });
   }
 
-  function banner(kind, msg){ return '<div class="banner '+kind+'">'+esc(msg)+'</div>'; }
+  function banner(kind, msg, tag){
+    return '<div class="banner '+kind+'"'+(tag ? ' data-'+tag+'="1"' : '')+'>'+esc(msg)+'</div>';
+  }
 
   // ------------------------------------------------------- el formulario ---
 
