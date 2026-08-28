@@ -313,9 +313,11 @@
 <!-- ===================== CONSOLIDADO ===================== -->
 <main class="view" id="view-consolidado" hidden>
   <div class="steps">
-    <b>C&oacute;mo pasar esto al Excel</b> (hoja <code>MAT UTILIZADO</code>): por cada t&eacute;cnico, clic en la
-    primera fila vac&iacute;a y pega tres veces &mdash; <code>B</code>, <code>M</code> y <code>AD</code>.
-    Los botones chicos de abajo sirven si prefieres columna por columna.
+    <b>C&oacute;mo pasar esto al Excel</b> (hoja <code>MAT UTILIZADO</code>): abre el archivo del corte
+    anterior, borra las filas viejas, y por cada t&eacute;cnico pega tres veces en la fila que te
+    dice su bloque &mdash; <code>A</code>, <code>M</code> y <code>AD</code>. Despu&eacute;s
+    <b>gu&aacute;rdalo con el nombre nuevo</b> y archiva el bloque aqu&iacute;.
+    Los botones chicos sirven si prefieres columna por columna.
   </div>
   <div id="consolidado-body"></div>
 </main>
@@ -423,7 +425,9 @@
   // usaron (SUJET. ACOM., MUELA, SINCHO G., CINTA, CABLE MARFIL, CAJA EXC.).
   var BLOQUE_MZ = ["argollas","","taquetes","","roseta","sellos","sincho","","",
                    "tensores","","sujMarfil","","ont"];
-  var BLOQUE_BG = ["folioExcel","telefono","fecha","tipoOs","tecnico","serie"];
+  // Arranca en A: la columna del consecutivo la llenaba el macro viejo, y si
+  // no viene aqui hay que teclearla a mano en cada corte.
+  var BLOQUE_AG = ["__num__","folioExcel","telefono","fecha","tipoOs","tecnico","serie"];
 
   var GRUPOS_SUELTOS = [
     {keys:["argollas"],                 label:"M",   badge:"ARGOLLAS"},
@@ -1174,6 +1178,53 @@
     return e[clave];
   }
 
+  var MESES = ["ENERO","FEBRERO","MARZO","ABRIL","MAYO","JUNIO",
+               "JULIO","AGOSTO","SEPTIEMBRE","OCTUBRE","NOVIEMBRE","DICIEMBRE"];
+
+  /** Semana ISO — es la que usan los nombres de archivo: el 24/08/2026 cae en la S35. */
+  function semanaISO(d){
+    var t = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+    t.setDate(t.getDate() - ((t.getDay() + 6) % 7) + 3);      // jueves de esa semana
+    var ene4 = new Date(t.getFullYear(), 0, 4);
+    ene4.setDate(ene4.getDate() - ((ene4.getDay() + 6) % 7) + 3);
+    return 1 + Math.round((t - ene4) / 604800000);
+  }
+
+  function fechaDe(dmy){
+    var m = String(dmy||"").match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+    return m ? new Date(+m[3], +m[2]-1, +m[1]) : null;
+  }
+
+  /**
+   * El nombre que lleva el archivo de este corte, con el mismo patrón que los
+   * de 2026: "REPORTE DE MATERIAL FIBRA S35 24 AL 27 DE AGOSTO 2026".
+   */
+  function nombreDelCorte(entries){
+    var fechas = entries.map(function(e){ return fechaDe(e.fecha); })
+                        .filter(Boolean).sort(function(a,b){ return a-b; });
+    if(!fechas.length) return "";
+    var d1 = fechas[0], d2 = fechas[fechas.length-1];
+    var tramo = (d1.getMonth() === d2.getMonth())
+      ? d1.getDate()+" AL "+d2.getDate()+" DE "+MESES[d2.getMonth()]
+      : d1.getDate()+" DE "+MESES[d1.getMonth()]+" AL "+d2.getDate()+" DE "+MESES[d2.getMonth()];
+    return "REPORTE DE MATERIAL FIBRA S"+semanaISO(d1)+" "+tramo+" "+d2.getFullYear();
+  }
+
+  function resumenDelCorte(orden, mapa){
+    var total = STATE.entries.length;
+    var sinMaterial = STATE.entries.filter(function(e){ return !e.materialOk; }).length;
+    var nombre = nombreDelCorte(STATE.entries);
+    var aviso = sinMaterial
+      ? '<br>⚠ <b>'+sinMaterial+'</b> orden(es) todavía sin material capturado.'
+      : "";
+    return '<div class="steps"><b>Este corte: '+total+' órdenes.</b> ' +
+      'En el Excel ocupan de la fila <b>2</b> a la <b>'+(total+1)+'</b> — ' +
+      'borra hasta ahí antes de pegar, por si el corte anterior era más largo.' + aviso +
+      '<br><br>Nombre del archivo:<br><code>'+esc(nombre)+'.xlsx</code>' +
+      '<button class="mini" data-nombre="'+esc(nombre)+'" style="margin-left:8px">copiar</button>' +
+      '</div>';
+  }
+
   function renderConsolidado(){
     if(!ADMIN) return;
     var body = qs("consolidado-body");
@@ -1187,11 +1238,17 @@
       if(!mapa[e.tecnico]){ mapa[e.tecnico] = []; orden.push(e.tecnico); }
       mapa[e.tecnico].push(e);
     });
-    body.innerHTML = orden.map(function(t){ return bloqueTecnico(t, mapa[t]); }).join("");
+    var desde = 0;
+    var bloques = orden.map(function(t){
+      var html = bloqueTecnico(t, mapa[t], desde);
+      desde += mapa[t].length;   // el consecutivo del Excel corre entre técnicos
+      return html;
+    });
+    body.innerHTML = resumenDelCorte(orden, mapa) + bloques.join("");
     cablearConsolidado();
   }
 
-  function bloqueTecnico(nombre, filas){
+  function bloqueTecnico(nombre, filas, desde){
     var cabMat = MATERIALES.map(function(m){
       return "<th>"+m.label+"<small>"+m.col+"</small></th>"; }).join("");
 
@@ -1219,12 +1276,13 @@
         g.label+' <span class="badge">'+g.badge+'</span></button>'; }).join("");
 
     return '<div class="techblock"><div class="techblock__head"><h3>'+esc(nombre)+'</h3>' +
-      '<span class="count">'+filas.length+' orden(es)</span></div>' +
+      '<span class="count">'+filas.length+' orden(es) · empieza en la fila '+
+      (desde + 2)+' del Excel</span></div>' +
       '<div class="tablewrap"><table><thead><tr><th>#</th><th>Folio</th><th>Fecha</th>' +
       '<th>Metraje<small>AD</small></th>'+cabMat+'</tr></thead><tbody>'+cuerpo+'</tbody></table></div>' +
       '<div class="copyrow">' +
-        '<button class="copybtn destacado" data-bg="1" data-tec="'+esc(nombre)+'">' +
-          'Pegar en B <span class="badge">B:G</span></button>' +
+        '<button class="copybtn destacado" data-ag="1" data-tec="'+esc(nombre)+'" ' +
+          'data-desde="'+desde+'">Pegar en A <span class="badge">A:G</span></button>' +
         '<button class="copybtn destacado" data-mz="1" data-tec="'+esc(nombre)+'">' +
           'Pegar en M <span class="badge">M:Z</span></button>' +
         '<button class="copybtn destacado" data-ad="1" data-tec="'+esc(nombre)+'">' +
@@ -1238,16 +1296,20 @@
   function filasDe(tec){
     return STATE.entries.filter(function(e){ return e.tecnico === tec; });
   }
-  function tsv(filas, claves){
-    return filas.map(function(e){
-      return claves.map(function(c){ return valorParaExcel(e, c); }).join("\t");
+  function tsv(filas, claves, desde){
+    return filas.map(function(e, i){
+      return claves.map(function(c){
+        return c === "__num__" ? (desde || 0) + i + 1 : valorParaExcel(e, c);
+      }).join("\t");
     }).join("\n");
   }
 
   function cablearConsolidado(){
     var body = qs("consolidado-body");
-    body.querySelectorAll("[data-bg]").forEach(function(b){
-      b.addEventListener("click", function(){ copyText(tsv(filasDe(b.dataset.tec), BLOQUE_BG), b); });
+    body.querySelectorAll("[data-ag]").forEach(function(b){
+      b.addEventListener("click", function(){
+        copyText(tsv(filasDe(b.dataset.tec), BLOQUE_AG, parseInt(b.dataset.desde,10)||0), b);
+      });
     });
     body.querySelectorAll("[data-mz]").forEach(function(b){
       b.addEventListener("click", function(){ copyText(tsv(filasDe(b.dataset.tec), BLOQUE_MZ), b); });
@@ -1259,6 +1321,9 @@
       b.addEventListener("click", function(){
         copyText(tsv(filasDe(b.dataset.tec), b.dataset.cols.split(",")), b);
       });
+    });
+    body.querySelectorAll("[data-nombre]").forEach(function(b){
+      b.addEventListener("click", function(){ copyText(b.dataset.nombre, b); });
     });
     body.querySelectorAll("[data-copiado]").forEach(function(b){
       b.addEventListener("click", function(){ archivarBloque(b); });
