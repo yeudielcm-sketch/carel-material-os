@@ -184,9 +184,12 @@ function listEntries(full) {
     // El índice de duplicados mira TODAS las filas, también las ya copiadas:
     // un folio repetido hace tres semanas sigue siendo un folio repetido.
     if (full) {
+      // El expediente va aquí aunque no sirva para detectar duplicados: es fijo
+      // por técnico, y así la app lo recupera aunque sus órdenes ya estén
+      // archivadas o entre desde otro teléfono.
       indice.push([String(r[idx("Folio")]), String(r[idx("Telefono")]),
                    String(r[idx("Fecha")]), tec, num(r[idx("NFibra")]),
-                   String(r[idx("ID")])]);
+                   String(r[idx("ID")]), String(r[idx("ExpedienteCope")])]);
     }
 
     if (String(r[idx("Copiada")])) continue; // archivada: fuera de la vista

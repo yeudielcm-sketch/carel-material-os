@@ -328,7 +328,7 @@
 
     {g:"El cliente", k:"cliente",      lab:"CLIENTE",           req:true, mayus:true, ancho:true},
     {g:"El cliente", k:"telefono",     lab:"TELEFONO",          req:true, numerico:true},
-    {g:"El cliente", k:"expediente",   lab:"EXPEDIENTE DE COPE", numerico:true},
+    {g:"El cliente", k:"expediente",   lab:"EXPEDIENTE DE COPE", numerico:true, recuerda:true, fijoDelTecnico:true},
     {g:"El cliente", k:"direccion",    lab:"DIRECCION",         mayus:true, ancho:true},
     {g:"El cliente", k:"barrio",       lab:"BARRIO",            lista:true, recuerda:true, mayus:true, ancho:true},
 
@@ -670,11 +670,30 @@
     return o;
   }
 
+  /**
+   * Lo último que usó ESTE técnico en ese campo. Las órdenes a la vista traen
+   * todos los campos; el índice histórico solo el expediente de COPE — que es
+   * fijo por persona y no se debe volver a teclear ni cuando ya archivó todo
+   * ni cuando entra desde otro teléfono.
+   */
+  function ultimoDelTecnico(k){
+    var mios = STATE.entries.filter(function(e){ return normName(e.tecnico) === TECNICO; });
+    for(var i = mios.length - 1; i >= 0; i--){ if(mios[i][k]) return mios[i][k]; }
+    if(k === "expediente"){
+      for(var j = STATE.indice.length - 1; j >= 0; j--){
+        var r = STATE.indice[j];
+        if(normName(r[3]) === TECNICO && r[6]) return r[6];
+      }
+    }
+    return "";
+  }
+
   function limpiarFormulario(){
     CAMPOS.forEach(function(c){
-      var recordadoV = c.recuerda ? recordado(c.k) : "";
-      ponerCampo(c.k, c.fecha ? hoyDDMMYYYY() : recordadoV);
-      pista(c.k, "");
+      var previo = c.recuerda ? (ultimoDelTecnico(c.k) || recordado(c.k)) : "";
+      ponerCampo(c.k, c.fecha ? hoyDDMMYYYY() : previo);
+      pista(c.k, c.fijoDelTecnico && previo
+        ? "Es el tuyo, no cambia. Tócalo solo si te lo cambiaron." : "");
     });
     if(!leerCampo("acometida")) ponerCampo("acometida", "AEREO");
     qs("f-nfibra").value = siguienteNFibra();
@@ -704,7 +723,8 @@
   function todasConocidas(){
     var vistos = {}, out = [];
     STATE.indice.forEach(function(r){
-      var e = { folio:r[0], telefono:r[1], fecha:r[2], tecnico:r[3], nFibra:r[4], id:r[5]||"" };
+      var e = { folio:r[0], telefono:r[1], fecha:r[2], tecnico:r[3], nFibra:r[4],
+                id:r[5]||"", expediente:r[6]||"" };
       if(e.id) vistos[e.id] = true;
       out.push(e);
     });
