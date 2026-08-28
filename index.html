@@ -1204,9 +1204,15 @@
                         .filter(Boolean).sort(function(a,b){ return a-b; });
     if(!fechas.length) return "";
     var d1 = fechas[0], d2 = fechas[fechas.length-1];
-    var tramo = (d1.getMonth() === d2.getMonth())
-      ? d1.getDate()+" AL "+d2.getDate()+" DE "+MESES[d2.getMonth()]
-      : d1.getDate()+" DE "+MESES[d1.getMonth()]+" AL "+d2.getDate()+" DE "+MESES[d2.getMonth()];
+    var tramo;
+    if(d1.getTime() === d2.getTime()){
+      tramo = d1.getDate()+" DE "+MESES[d1.getMonth()];
+    } else if(d1.getMonth() === d2.getMonth()){
+      tramo = d1.getDate()+" AL "+d2.getDate()+" DE "+MESES[d2.getMonth()];
+    } else {
+      tramo = d1.getDate()+" DE "+MESES[d1.getMonth()]+" AL "+
+              d2.getDate()+" DE "+MESES[d2.getMonth()];
+    }
     return "REPORTE DE MATERIAL FIBRA S"+semanaISO(d1)+" "+tramo+" "+d2.getFullYear();
   }
 
@@ -1215,9 +1221,11 @@
     var sinMaterial = STATE.entries.filter(function(e){ return !e.materialOk; }).length;
     var nombre = nombreDelCorte(STATE.entries);
     var aviso = sinMaterial
-      ? '<br>⚠ <b>'+sinMaterial+'</b> orden(es) todavía sin material capturado.'
+      ? '<br>⚠ <b>'+sinMaterial+'</b> '+(sinMaterial === 1 ? 'orden' : 'órdenes')+
+        ' todavía sin material capturado.'
       : "";
-    return '<div class="steps"><b>Este corte: '+total+' órdenes.</b> ' +
+    return '<div class="steps"><b>Este corte: '+total+
+      (total === 1 ? ' orden.' : ' órdenes.')+'</b> ' +
       'En el Excel ocupan de la fila <b>2</b> a la <b>'+(total+1)+'</b> — ' +
       'borra hasta ahí antes de pegar, por si el corte anterior era más largo.' + aviso +
       '<br><br>Nombre del archivo:<br><code>'+esc(nombre)+'.xlsx</code>' +
