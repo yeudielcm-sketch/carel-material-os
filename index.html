@@ -196,6 +196,27 @@
   .orden .datos .l2{font-size:12.5px;color:var(--muted);margin-top:2px}
   .orden .acciones{display:flex;gap:7px;flex-wrap:wrap}
 
+  .conboton{display:flex;gap:6px;align-items:stretch}
+  .conboton input{flex:1;min-width:0}
+  button.scan{flex:none;width:52px;border:1.5px solid var(--line);background:var(--surface-2);
+    border-radius:var(--radius-ctl);font-size:20px;cursor:pointer;line-height:1;color:var(--text)}
+  button.scan:active{background:var(--accent-soft);border-color:var(--accent)}
+
+  #escaner{position:fixed;inset:0;background:rgba(0,0,0,.86);z-index:60;
+    display:flex;align-items:center;justify-content:center;padding:16px}
+  #escaner[hidden]{display:none}
+  .escaner__caja{background:var(--surface);border-radius:var(--radius-card);width:100%;
+    max-width:460px;overflow:hidden;border:1px solid var(--line)}
+  .escaner__caja h3{font-size:18px;padding:14px 16px 0}
+  #escaner-video{width:100%;max-height:56vh;display:block;background:#000;object-fit:cover;
+    margin-top:10px}
+  .escaner__cuerpo{padding:12px 16px 16px}
+  #escaner-msg{font-size:13px;color:var(--muted);margin-bottom:10px}
+  #escaner-msg.malo{color:var(--danger);font-weight:600}
+  .leido{background:var(--accent-soft);border:1px solid var(--accent);border-radius:9px;
+    padding:11px 12px;font-size:19px;font-weight:700;text-align:center;word-break:break-all;
+    margin-bottom:10px;color:var(--text)}
+
   #toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);
     background:var(--text);color:var(--ground);padding:11px 18px;border-radius:30px;
     font-size:13.5px;font-weight:600;box-shadow:0 6px 20px rgba(0,0,0,.25);opacity:0;
@@ -299,6 +320,24 @@
   <div id="consolidado-body"></div>
 </main>
 
+<div id="escaner" hidden>
+  <div class="escaner__caja">
+    <h3>Escanear c&oacute;digo</h3>
+    <video id="escaner-video" playsinline muted></video>
+    <div class="escaner__cuerpo">
+      <div id="escaner-msg">Apunta al c&oacute;digo de barras de la etiqueta.</div>
+      <div id="escaner-hallado" hidden>
+        <div class="leido mono" id="escaner-valor"></div>
+        <div class="botonera" style="margin-top:0">
+          <button class="big" id="escaner-usar" type="button">Usar este</button>
+          <button class="big sec" id="escaner-seguir" type="button">Seguir buscando</button>
+        </div>
+      </div>
+      <button class="big sec" id="escaner-cerrar" type="button">Cerrar</button>
+    </div>
+  </div>
+</div>
+
 <div id="toast" role="status" aria-live="polite"></div>
 
 <script>
@@ -332,10 +371,10 @@
     {g:"El cliente", k:"direccion",    lab:"DIRECCION",         mayus:true, ancho:true},
     {g:"El cliente", k:"barrio",       lab:"BARRIO",            lista:true, recuerda:true, mayus:true, ancho:true},
 
-    {g:"El equipo",  k:"serie",        lab:"SERIE",             req:true, mayus:true},
+    {g:"El equipo",  k:"serie",        lab:"SERIE",             req:true, mayus:true, escaneable:true},
     {g:"El equipo",  k:"modelo",       lab:"MODELO DE MODEM",   lista:true, mayus:true},
     {g:"El equipo",  k:"cv",           lab:"CV",                lista:true, recuerda:true, mayus:true},
-    {g:"El equipo",  k:"retiraModem",  lab:"SE RETIRA MODEM",   mayus:true},
+    {g:"El equipo",  k:"retiraModem",  lab:"SE RETIRA MODEM",   mayus:true, escaneable:true},
 
     {g:"El trabajo", k:"metraje",      lab:"METRAJE (metros)",  lista:true, req:true, numerico:true},
     {g:"El trabajo", k:"acometida",    lab:"ACOMETIDA",         fijas:["AEREO","SUBTERRANEO"], recuerda:true},
@@ -563,6 +602,98 @@
     return '<div class="banner '+kind+'"'+(tag ? ' data-'+tag+'="1"' : '')+'>'+esc(msg)+'</div>';
   }
 
+  // ------------------------------------------------------------- escáner ---
+
+  // Lector de códigos del propio navegador — sin librerías ni peso extra.
+  // Chrome en Android lo trae; donde no exista, el botón de cámara no se dibuja
+  // y la serie se teclea como siempre.
+  function hayEscaner(){ return typeof window.BarcodeDetector === "function"; }
+
+  // La serie de un módem suele ir en Code 128; los demás por si la etiqueta
+  // trae otra cosa.
+  var FORMATOS = ["code_128","code_39","code_93","codabar","itf",
+                  "qr_code","data_matrix","ean_13"];
+
+  var ESC = { stream:null, timer:null, campo:null, valor:"" };
+
+  function escanerMsg(txt, malo){
+    var m = qs("escaner-msg");
+    m.textContent = txt;
+    m.className = malo ? "malo" : "";
+  }
+
+  function abrirEscaner(campo){
+    if(!hayEscaner()) return;
+    ESC.campo = campo; ESC.valor = "";
+    qs("escaner").hidden = false;
+    qs("escaner-hallado").hidden = true;
+    escanerMsg("Apunta al código de barras de la etiqueta.", false);
+
+    navigator.mediaDevices.getUserMedia({ video:{ facingMode:{ ideal:"environment" } } })
+      .then(function(s){
+        ESC.stream = s;
+        var v = qs("escaner-video");
+        v.srcObject = s;
+        return v.play();
+      })
+      .then(arrancarDeteccion)
+      .catch(function(err){
+        escanerMsg(err && err.name === "NotAllowedError"
+          ? "No diste permiso de cámara. Escribe la serie a mano."
+          : "No se pudo abrir la cámara. Escribe la serie a mano.", true);
+      });
+  }
+
+  function arrancarDeteccion(){
+    var pedir = window.BarcodeDetector.getSupportedFormats
+      ? window.BarcodeDetector.getSupportedFormats()
+      : Promise.resolve(FORMATOS);
+    return pedir.then(function(soportados){
+      var usar = FORMATOS.filter(function(f){ return soportados.indexOf(f) !== -1; });
+      var det = usar.length ? new window.BarcodeDetector({formats: usar})
+                            : new window.BarcodeDetector();
+      var v = qs("escaner-video");
+      ESC.timer = setInterval(function(){
+        if(!ESC.stream || v.readyState < 2) return;
+        det.detect(v).then(function(codigos){
+          if(!codigos || !codigos.length) return;
+          var texto = String(codigos[0].rawValue || "").trim();
+          if(!texto || texto === ESC.valor) return;
+          // Una etiqueta de ONT trae varios códigos (serie, MAC, GPON SN) y la
+          // cámara agarra el que quede enfocado. Se enseña y lo confirma quien
+          // está viendo el equipo, nunca se acepta a ciegas.
+          ESC.valor = texto;
+          qs("escaner-valor").textContent = texto;
+          qs("escaner-hallado").hidden = false;
+          escanerMsg("Comprueba que sea la serie y no otra etiqueta.", false);
+        }).catch(function(){});
+      }, 250);
+    }).catch(function(){
+      escanerMsg("Este teléfono no pudo iniciar el lector. Escríbela a mano.", true);
+    });
+  }
+
+  function cerrarEscaner(){
+    if(ESC.timer){ clearInterval(ESC.timer); ESC.timer = null; }
+    if(ESC.stream){
+      ESC.stream.getTracks().forEach(function(t){ t.stop(); });
+      ESC.stream = null;
+    }
+    var v = qs("escaner-video");
+    if(v) v.srcObject = null;
+    qs("escaner").hidden = true;
+  }
+
+  function usarLoEscaneado(){
+    if(!ESC.valor || !ESC.campo) return cerrarEscaner();
+    var campo = ESC.campo, valor = ESC.valor;
+    cerrarEscaner();
+    ponerCampo(campo, valor);
+    var el = qs("f-"+campo);
+    if(el) el.dispatchEvent(new Event("input", {bubbles:true}));  // deduce el modelo
+    toast("Serie leída: " + valor);
+  }
+
   // ------------------------------------------------------- el formulario ---
 
   function opcionesDe(c){
@@ -601,9 +732,15 @@
     } else if(c.fecha){
       h += '<input type="date" id="f-'+c.k+'" data-k="'+c.k+'">';
     } else {
-      h += '<input type="text" id="f-'+c.k+'" data-k="'+c.k+'"'
-         + (c.numerico ? ' inputmode="numeric" class="mono"' : '')
-         + ' autocomplete="off">';
+      var inp = '<input type="text" id="f-'+c.k+'" data-k="'+c.k+'"'
+              + (c.numerico ? ' inputmode="numeric" class="mono"' : '')
+              + ' autocomplete="off">';
+      // El botón de cámara solo se dibuja si el navegador trae el lector: en
+      // uno que no lo tenga, un botón que no hace nada es peor que no tenerlo.
+      h += (c.escaneable && hayEscaner())
+        ? '<div class="conboton">'+inp+'<button type="button" class="scan" data-scan="'+c.k+'" '
+          + 'aria-label="Escanear código">&#128247;</button></div>'
+        : inp;
     }
     h += '<div class="pista" id="p-'+c.k+'"></div></div>';
     return h;
@@ -640,6 +777,10 @@
     ["folio","telefono"].forEach(function(k){
       var el = qs("f-"+k);
       if(el) el.addEventListener("change", function(){ avisarDuplicado(k); });
+    });
+    // el botón de cámara
+    qs("form-campos").querySelectorAll("button[data-scan]").forEach(function(b){
+      b.addEventListener("click", function(){ abrirEscaner(b.dataset.scan); });
     });
     // el metraje sugiere los tensores
     var met = qs("f-metraje");
@@ -1186,6 +1327,13 @@
     });
     qs("btn-siguiente").addEventListener("click", guardarOrdenYSeguir);
     qs("btn-guardar-material").addEventListener("click", guardarMaterial);
+    qs("escaner-cerrar").addEventListener("click", cerrarEscaner);
+    qs("escaner-usar").addEventListener("click", usarLoEscaneado);
+    qs("escaner-seguir").addEventListener("click", function(){
+      ESC.valor = "";
+      qs("escaner-hallado").hidden = true;
+      escanerMsg("Apunta al código de barras de la etiqueta.", false);
+    });
 
     if(!configured){
       qs("banner-top").innerHTML = banner("danger",
