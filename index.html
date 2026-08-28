@@ -1,0 +1,522 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
+<title>Material de OS</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@600;700;800&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ground:#f5f6ee; --surface:#ffffff; --surface-2:#eceee0; --line:#d7dbc3;
+    --text:#242a12; --muted:#767d5c; --muted-2:#94997a;
+    --accent:#5c6b1f; --accent-ink:#f8fbe9; --accent-soft:#e6ecc9;
+    --ok:#2f7a8f; --ok-soft:#dfeef3; --warn:#a66a0a; --warn-soft:#f7ecd6; --danger:#c23b34; --danger-soft:#faded9;
+    --radius-card:14px; --radius-ctl:9px;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --ground:#12140a; --surface:#1a1d0f; --surface-2:#212512; --line:#383f1e;
+      --text:#eef1e0; --muted:#a3a986; --muted-2:#82886a;
+      --accent:#b7d43a; --accent-ink:#1a2206; --accent-soft:#333d16;
+      --ok:#6fc6e0; --ok-soft:#16303a; --warn:#f0b429; --warn-soft:#3a2e10; --danger:#ef5350; --danger-soft:#3a1c1a;
+    }
+  }
+  :root[data-theme="dark"]{
+    --ground:#12140a; --surface:#1a1d0f; --surface-2:#212512; --line:#383f1e;
+    --text:#eef1e0; --muted:#a3a986; --muted-2:#82886a;
+    --accent:#b7d43a; --accent-ink:#1a2206; --accent-soft:#333d16;
+    --ok:#6fc6e0; --ok-soft:#16303a; --warn:#f0b429; --warn-soft:#3a2e10; --danger:#ef5350; --danger-soft:#3a1c1a;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{
+    background:var(--ground); color:var(--text); min-height:100vh;
+    font-family:"IBM Plex Sans",-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+    line-height:1.45; font-size:15px; -webkit-tap-highlight-color:transparent;
+  }
+  h1,h2,h3{font-family:"Big Shoulders Display","IBM Plex Sans",sans-serif;font-weight:800;
+    letter-spacing:.2px; text-wrap:balance; margin:0}
+  .mono{font-family:"IBM Plex Mono",ui-monospace,monospace; font-variant-numeric:tabular-nums}
+
+  .topbar{max-width:980px;margin:0 auto;padding:18px 18px 0}
+  .topbar .brand{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+  .topbar h1{font-size:26px;color:var(--text)}
+  .topbar .brand small{font-family:"IBM Plex Mono",monospace;font-size:11px;letter-spacing:.08em;
+    text-transform:uppercase;color:var(--accent);background:var(--accent-soft);
+    padding:3px 8px;border-radius:20px}
+  .topbar p.sub{color:var(--muted);font-size:13.5px;margin:4px 0 0;max-width:60ch}
+
+  .tabs{max-width:980px;margin:16px auto 0;padding:0 18px;display:flex;gap:6px;
+    border-bottom:1px solid var(--line)}
+  .tab{appearance:none;border:none;background:none;color:var(--muted);font-family:inherit;
+    font-size:14.5px;font-weight:600;padding:10px 4px;margin-right:18px;cursor:pointer;
+    border-bottom:2.5px solid transparent;transition:.12s}
+  .tab:hover{color:var(--text)}
+  .tab.active{color:var(--accent);border-bottom-color:var(--accent)}
+  .tab .n{display:inline-block;margin-left:6px;background:var(--surface-2);color:var(--muted);
+    font-family:"IBM Plex Mono",monospace;font-size:11px;padding:1px 6px;border-radius:20px}
+
+  main.view{max-width:980px;margin:0 auto;padding:20px 18px 70px}
+  main.view[hidden]{display:none}
+
+  .ticket{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius-card);
+    max-width:480px;margin:0 auto;overflow:hidden;box-shadow:0 1px 2px rgba(0,0,0,.04)}
+  .ticket__band{height:6px;background:var(--accent)}
+  .ticket__head{padding:16px 18px 4px;display:flex;justify-content:space-between;align-items:flex-start;gap:10px}
+  .ticket__head h2{font-size:19px}
+  .tecnico-chip{font-size:12px;color:var(--muted)}
+  .tecnico-chip b{color:var(--text);font-weight:700}
+  .tecnico-chip a.change{font-size:12px;color:var(--accent);text-decoration:none;white-space:nowrap;margin-left:6px}
+  .ticket__body{padding:14px 18px 20px}
+
+  .field{margin-bottom:14px}
+  .field label{display:block;font-size:11.5px;font-weight:700;text-transform:uppercase;
+    letter-spacing:.06em;color:var(--muted);margin-bottom:6px}
+  .field input[type=text]{
+    width:100%;background:var(--surface-2);border:1.5px solid var(--line);border-radius:var(--radius-ctl);
+    padding:12px 12px;font-size:17px;color:var(--text);font-family:"IBM Plex Mono",monospace}
+  .field input:focus{outline:none;border-color:var(--accent)}
+
+  .matgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:6px 0 18px}
+  @media(max-width:380px){.matgrid{grid-template-columns:1fr}}
+  .matrow{background:var(--surface-2);border:1px solid var(--line);border-radius:var(--radius-ctl);
+    padding:9px 10px}
+  .matrow .mlabel{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px}
+  .matrow .mlabel span.name{font-size:12px;font-weight:600;color:var(--text)}
+  .matrow .mlabel span.col{font-family:"IBM Plex Mono",monospace;font-size:10px;color:var(--muted-2);
+    background:var(--surface);border:1px solid var(--line);border-radius:5px;padding:1px 5px}
+  .stepper{display:flex;align-items:stretch;gap:6px}
+  .stepper button{width:34px;flex:none;border:1px solid var(--line);background:var(--surface);
+    color:var(--text);font-size:18px;font-weight:700;border-radius:8px;cursor:pointer;line-height:1}
+  .stepper button:active{background:var(--accent-soft);border-color:var(--accent)}
+  .stepper input{width:100%;text-align:center;border:1px solid var(--line);background:var(--surface);
+    border-radius:8px;font-family:"IBM Plex Mono",monospace;font-size:18px;font-weight:600;
+    color:var(--text);padding:6px 2px;-moz-appearance:textfield}
+  .stepper input::-webkit-outer-spin-button,.stepper input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+  .stepper input:focus{outline:none;border-color:var(--accent)}
+
+  button.big{width:100%;border:none;border-radius:11px;padding:15px;font-size:16px;font-weight:700;
+    font-family:"IBM Plex Sans",sans-serif;cursor:pointer;background:var(--accent);color:var(--accent-ink)}
+  button.big:disabled{opacity:.55;cursor:not-allowed}
+
+  .note{font-size:12px;color:var(--muted);text-align:center;margin-top:12px}
+  .banner{border-radius:10px;padding:10px 13px;font-size:13px;margin-bottom:14px}
+  .banner.warn{background:var(--warn-soft);color:var(--warn)}
+  .banner.danger{background:var(--danger-soft);color:var(--danger)}
+  .banner.ok{background:var(--ok-soft);color:var(--ok);font-weight:600}
+
+  .techblock{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius-card);
+    margin-bottom:18px;overflow:hidden}
+  .techblock__head{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;
+    padding:13px 16px;border-bottom:1px solid var(--line);background:var(--surface-2)}
+  .techblock__head h3{font-size:17px}
+  .techblock__head .count{font-family:"IBM Plex Mono",monospace;font-size:12px;color:var(--muted)}
+  .tablewrap{overflow-x:auto}
+  table{border-collapse:collapse;width:100%;font-size:13px;white-space:nowrap}
+  th,td{padding:8px 11px;border-bottom:1px solid var(--line);text-align:left}
+  th{background:var(--surface-2);color:var(--muted);font-weight:700;font-size:10.5px;
+    text-transform:uppercase;letter-spacing:.05em}
+  td.num{font-family:"IBM Plex Mono",monospace;text-align:right}
+  td.folio{font-family:"IBM Plex Mono",monospace;color:var(--muted)}
+  th small{color:var(--muted-2);font-weight:600;display:block;font-size:9.5px}
+  .del{background:none;border:none;color:var(--muted-2);cursor:pointer;font-size:13px;padding:3px 6px;
+    border-radius:6px}
+  .del:hover{color:var(--danger);background:var(--danger-soft)}
+  .del.confirm{color:var(--danger);font-weight:700}
+
+  .copyrow{display:flex;flex-wrap:wrap;gap:8px;padding:13px 16px}
+  .copybtn{border:1.5px solid var(--line);background:var(--surface-2);color:var(--text);
+    border-radius:9px;padding:9px 13px;font-size:13px;font-weight:600;cursor:pointer;
+    font-family:"IBM Plex Sans",sans-serif;display:flex;align-items:center;gap:7px}
+  .copybtn .badge{font-family:"IBM Plex Mono",monospace;font-size:10.5px;background:var(--accent-soft);
+    color:var(--accent);padding:1px 6px;border-radius:20px}
+  .copybtn:hover{border-color:var(--accent)}
+  .footrow{display:flex;justify-content:flex-end;align-items:center;gap:10px;padding:11px 16px;
+    border-top:1px dashed var(--line)}
+  .footrow button.clear{background:none;border:none;color:var(--muted);font-size:12.5px;cursor:pointer;
+    text-decoration:underline;font-family:inherit}
+  .footrow button.clear.confirm{color:var(--danger);font-weight:700}
+  .empty{text-align:center;color:var(--muted);padding:40px 20px;border:1.5px dashed var(--line);
+    border-radius:var(--radius-card)}
+  .steps{background:var(--surface-2);border:1px dashed var(--line);border-radius:10px;
+    padding:12px 14px;margin:0 0 18px;font-size:13px;color:var(--muted)}
+  .steps b{color:var(--text)}
+
+  #toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%) translateY(0);
+    background:var(--text);color:var(--ground);padding:11px 18px;border-radius:30px;font-size:13.5px;
+    font-weight:600;box-shadow:0 6px 20px rgba(0,0,0,.25);opacity:0;pointer-events:none;
+    transition:opacity .2s, transform .2s; z-index:50; max-width:90vw; text-align:center}
+  #toast.show{opacity:1;transform:translateX(-50%) translateY(-4px)}
+  #toast.err{background:var(--danger)}
+
+  @media (prefers-reduced-motion: reduce){ *{transition:none !important} }
+</style>
+</head>
+<body>
+<div class="topbar">
+  <div class="brand">
+    <h1>Material de OS</h1>
+    <small>FTTH &middot; CAREL</small>
+  </div>
+  <p class="sub">Reporta el material que usaste al cerrar cada orden &mdash; reemplaza la hoja de papel. No necesitas cuenta ni iniciar sesi&oacute;n.</p>
+</div>
+
+<nav class="tabs">
+  <button class="tab active" data-tab="reportar" type="button">Reportar</button>
+  <button class="tab" data-tab="consolidado" type="button">Consolidado <span class="n" id="tab-count">0</span></button>
+</nav>
+
+<main class="view" id="view-reportar">
+  <div id="reportar-banner"></div>
+  <div class="ticket">
+    <div class="ticket__band"></div>
+    <div class="ticket__head">
+      <h2>Nuevo reporte</h2>
+      <div id="tecnico-chip-wrap"></div>
+    </div>
+    <div class="ticket__body">
+      <div id="tecnico-picker" class="field" hidden>
+        <label for="f-tecnico">T&eacute;cnico</label>
+        <input type="text" id="f-tecnico" list="tecnicos-list" placeholder="Tu nombre completo" autocomplete="off">
+        <datalist id="tecnicos-list"></datalist>
+      </div>
+      <div class="field">
+        <label for="f-folio">Folio de la orden</label>
+        <input type="text" id="f-folio" inputmode="numeric" placeholder="Ej. 58722595" autocomplete="off">
+      </div>
+      <div class="matgrid" id="matgrid"></div>
+      <button class="big" id="btn-submit" type="button">Guardar reporte</button>
+      <p class="note">Los materiales en 0 se guardan como 0 &mdash; solo ajusta lo que usaste.</p>
+    </div>
+  </div>
+</main>
+
+<main class="view" id="view-consolidado" hidden>
+  <div class="steps">
+    <b>C&oacute;mo pasar esto al Excel:</b> por cada t&eacute;cnico, copia cada bloque de columnas y p&eacute;galo en la
+    primera fila vac&iacute;a de su bloque de &oacute;rdenes &mdash; en el mismo orden en que aparecen aqu&iacute;.
+    Son 5 pegados porque las columnas de material no est&aacute;n seguidas en la hoja.
+  </div>
+  <div id="consolidado-body"></div>
+</main>
+
+<div id="toast" role="status" aria-live="polite"></div>
+
+<script>
+(function(){
+  "use strict";
+
+  // ====================================================================
+  // CONFIGURACIÓN — pega aquí la URL de tu Web App de Google Apps Script
+  // (termina en /exec). Ver INSTRUCCIONES.md para desplegarla.
+  // ====================================================================
+  var WEBAPP_URL = "PEGA_AQUI_LA_URL_DE_TU_WEB_APP";
+
+  var POLL_MS = 20000; // refresco automático del consolidado
+
+  var MATERIALES = [
+    {key:"argollas",  label:"ARGOLLAS",    col:"M"},
+    {key:"taquetes",  label:"TAQUETES",    col:"O"},
+    {key:"roseta",    label:"ROSETA",      col:"Q"},
+    {key:"sellos",    label:"SELLOS",      col:"R"},
+    {key:"sincho",    label:"SINCHO",      col:"S"},
+    {key:"tensores",  label:"TENSORES",    col:"V"},
+    {key:"sujMarfil", label:"SUJ MARFIL",  col:"X"}
+  ];
+  var PASTE_GROUPS = [
+    {keys:["argollas"],                 label:"Columna M",   badge:"M"},
+    {keys:["taquetes"],                 label:"Columna O",   badge:"O"},
+    {keys:["roseta","sellos","sincho"], label:"Columnas Q:S", badge:"Q–S"},
+    {keys:["tensores"],                 label:"Columna V",   badge:"V"},
+    {keys:["sujMarfil"],                label:"Columna X",   badge:"X"}
+  ];
+
+  function stripAccents(s){return String(s).normalize("NFD").replace(/[̀-ͯ]/g,"");}
+  function normName(s){return stripAccents(s).toUpperCase().replace(/\s+/g," ").trim();}
+  function digitsOnly(s){return (String(s).match(/\d+/g)||[]).join("");}
+  function esc(s){return String(s).replace(/[&<>"]/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;"}[c];});}
+  function qs(id){return document.getElementById(id);}
+
+  function toast(msg, isErr){
+    var t = qs("toast");
+    t.textContent = msg;
+    t.className = "show" + (isErr?" err":"");
+    clearTimeout(toast._h);
+    toast._h = setTimeout(function(){ t.className=""; }, 2600);
+  }
+
+  function copyText(text, btn){
+    var done=function(){ var o=btn.textContent; btn.textContent="✓ Copiado"; setTimeout(function(){btn.textContent=o;},1200); };
+    if(navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(text).then(done).catch(function(){fallbackCopy(text,done);});
+    } else fallbackCopy(text,done);
+  }
+  function fallbackCopy(text,done){
+    var ta=document.createElement("textarea"); ta.value=text;
+    ta.style.position="fixed"; ta.style.opacity="0"; document.body.appendChild(ta);
+    ta.select(); try{document.execCommand("copy");}catch(e){} document.body.removeChild(ta); done();
+  }
+
+  var STATE = {entries:[], tecnicos:[]};
+  var configured = WEBAPP_URL && WEBAPP_URL.indexOf("PEGA_AQUI") === -1;
+
+  var params = new URLSearchParams(location.search);
+  var LOCKED_TECNICO = params.get("tec") ? normName(params.get("tec")) : (sessionStorage.getItem("ticket_tecnico")||"");
+
+  function bannerHtml(kind,msg){ return '<div class="banner '+kind+'">'+esc(msg)+'</div>'; }
+
+  function callApi(payload){
+    // Body como string sin cabecera Content-Type propia -> el navegador usa
+    // text/plain, que no dispara preflight CORS y Apps Script lo acepta bien.
+    return fetch(WEBAPP_URL, { method: "POST", body: JSON.stringify(payload) })
+      .then(function(r){ return r.json(); });
+  }
+
+  function fetchList(){
+    return fetch(WEBAPP_URL + "?action=list").then(function(r){ return r.json(); });
+  }
+
+  function refreshList(silent){
+    if(!configured) return Promise.resolve();
+    return fetchList().then(function(data){
+      if(data && Array.isArray(data.entries)){
+        STATE.entries = data.entries;
+        STATE.tecnicos = data.tecnicos || [];
+        renderConsolidado();
+        renderTecnicoChip();
+        clearConnBanner();
+      }
+    }).catch(function(){
+      if(!silent) showConnBanner();
+    });
+  }
+
+  function showConnBanner(){
+    qs("reportar-banner").innerHTML = bannerHtml("danger","No se pudo conectar con el guardado — revisa tu conexión e intenta de nuevo.");
+  }
+  function clearConnBanner(){
+    var b = qs("reportar-banner");
+    if(b.innerHTML.indexOf("No se pudo conectar")!==-1) b.innerHTML = "";
+  }
+
+  function renderMatGrid(){
+    qs("matgrid").innerHTML = MATERIALES.map(function(m){ return (
+      '<div class="matrow">' +
+        '<div class="mlabel"><span class="name">'+m.label+'</span><span class="col">'+m.col+'</span></div>' +
+        '<div class="stepper">' +
+          '<button type="button" data-step="-1" data-key="'+m.key+'">−</button>' +
+          '<input type="number" inputmode="numeric" min="0" step="1" value="0" id="m-'+m.key+'" onfocus="this.select()">' +
+          '<button type="button" data-step="1" data-key="'+m.key+'">+</button>' +
+        '</div></div>'
+    ); }).join("");
+    qs("matgrid").querySelectorAll("button[data-step]").forEach(function(b){
+      b.addEventListener("click", function(){
+        var inp = qs("m-"+b.dataset.key);
+        var cur = parseInt(inp.value||"0",10) || 0;
+        var next = Math.max(0, cur + parseInt(b.dataset.step,10));
+        inp.value = next;
+      });
+    });
+  }
+
+  function renderTecnicoChip(){
+    var wrap = qs("tecnico-chip-wrap");
+    var picker = qs("tecnico-picker");
+    if(LOCKED_TECNICO){
+      wrap.innerHTML = '<div class="tecnico-chip">Técnico: <b>'+esc(LOCKED_TECNICO)+'</b><a class="change" href="#" id="change-tec">cambiar</a></div>';
+      picker.hidden = true;
+      qs("change-tec").addEventListener("click", function(e){
+        e.preventDefault(); LOCKED_TECNICO=""; sessionStorage.removeItem("ticket_tecnico");
+        var url = new URL(location.href); url.searchParams.delete("tec");
+        history.replaceState(null,"",url.toString());
+        renderTecnicoChip();
+      });
+    } else {
+      wrap.innerHTML = "";
+      picker.hidden = false;
+      var dl = qs("tecnicos-list");
+      dl.innerHTML = STATE.tecnicos.map(function(t){ return '<option value="'+esc(t)+'">'; }).join("");
+    }
+  }
+
+  function groupByTecnico(entries){
+    var order = []; var map = {};
+    entries.forEach(function(e){
+      if(!map[e.tecnico]){ map[e.tecnico] = []; order.push(e.tecnico); }
+      map[e.tecnico].push(e);
+    });
+    return order.map(function(name){ return {name:name, rows:map[name]}; });
+  }
+
+  function renderConsolidado(){
+    qs("tab-count").textContent = STATE.entries.length;
+    var groups = groupByTecnico(STATE.entries);
+    var body = qs("consolidado-body");
+    if(groups.length===0){
+      body.innerHTML = '<div class="empty">Aún no hay reportes esta semana.<br>En cuanto un técnico guarde uno, aparece aquí.</div>';
+      return;
+    }
+    body.innerHTML = groups.map(renderTechBlock).join("");
+    body.querySelectorAll("[data-copy-group]").forEach(function(btn){
+      btn.addEventListener("click", function(){
+        var tec = btn.dataset.tec;
+        var keys = btn.dataset.copyGroup.split(",");
+        var rows = STATE.entries.filter(function(e){ return e.tecnico===tec; });
+        var tsv = rows.map(function(r){ return keys.map(function(k){ return r[k] || 0; }).join("\t"); }).join("\n");
+        copyText(tsv, btn);
+      });
+    });
+    body.querySelectorAll("[data-del]").forEach(function(btn){
+      btn.addEventListener("click", function(){ handleDeleteClick(btn); });
+    });
+    body.querySelectorAll("[data-clear-tec]").forEach(function(btn){
+      btn.addEventListener("click", function(){ handleClearTecClick(btn); });
+    });
+  }
+
+  function renderTechBlock(g){
+    var rowsHtml = g.rows.map(function(r,i){
+      return "<tr><td class=\"mono\">"+(i+1)+"</td><td class=\"folio\">"+esc(r.folio||"—")+"</td>" +
+        MATERIALES.map(function(m){ return '<td class="num mono">'+(r[m.key]||0)+'</td>'; }).join("") +
+        '<td><button class="del" data-del="'+r.id+'" data-tec="'+esc(g.name)+'">eliminar</button></td></tr>';
+    }).join("");
+    var copyBtns = PASTE_GROUPS.map(function(pg){
+      return '<button class="copybtn" data-copy-group="'+pg.keys.join(",")+'" data-tec="'+esc(g.name)+'">' +
+        '📋 '+pg.label+' <span class="badge">'+pg.badge+'</span></button>';
+    }).join("");
+    var headCols = MATERIALES.map(function(m){ return "<th>"+m.label+"<small>"+m.col+"</small></th>"; }).join("");
+    return '<div class="techblock"><div class="techblock__head"><h3>'+esc(g.name)+'</h3>' +
+      '<span class="count">'+g.rows.length+' orden(es)</span></div>' +
+      '<div class="tablewrap"><table><thead><tr><th>#</th><th>Folio</th>'+headCols+'<th></th></tr></thead>' +
+      '<tbody>'+rowsHtml+'</tbody></table></div>' +
+      '<div class="copyrow">'+copyBtns+'</div>' +
+      '<div class="footrow"><button class="clear" data-clear-tec="'+esc(g.name)+'">Ya lo pegué — vaciar este bloque</button></div>' +
+      '</div>';
+  }
+
+  function handleDeleteClick(btn){
+    if(btn.dataset.armed !== "1"){
+      btn.dataset.armed = "1"; btn.textContent = "¿seguro?"; btn.classList.add("confirm");
+      setTimeout(function(){ if(btn.isConnected){ btn.dataset.armed="0"; btn.textContent="eliminar"; btn.classList.remove("confirm"); } }, 3500);
+      return;
+    }
+    var id = btn.dataset.del;
+    btn.disabled = true;
+    callApi({action:"delete", id:id}).then(function(){
+      return refreshList();
+    }).then(function(){
+      toast("Reporte eliminado.");
+    }).catch(function(){
+      toast("No se pudo eliminar — intenta de nuevo.", true);
+      btn.disabled = false;
+    });
+  }
+
+  function handleClearTecClick(btn){
+    if(btn.dataset.armed !== "1"){
+      btn.dataset.armed = "1"; btn.textContent = "¿Seguro? Se borran sus filas ya pegadas";
+      btn.classList.add("confirm");
+      setTimeout(function(){ if(btn.isConnected){ btn.dataset.armed="0"; btn.textContent="Ya lo pegué — vaciar este bloque"; btn.classList.remove("confirm"); } }, 4000);
+      return;
+    }
+    var tec = btn.dataset.clearTec;
+    btn.disabled = true;
+    callApi({action:"clearTec", tecnico:tec}).then(function(){
+      return refreshList();
+    }).then(function(){
+      toast("Bloque de "+tec+" vaciado.");
+    }).catch(function(){
+      toast("No se pudo vaciar — intenta de nuevo.", true);
+      btn.disabled = false;
+    });
+  }
+
+  function readMatValues(){
+    var out = {};
+    MATERIALES.forEach(function(m){ out[m.key] = Math.max(0, parseInt(qs("m-"+m.key).value||"0",10) || 0); });
+    return out;
+  }
+
+  function showSavedBanner(folio){
+    var banner = qs("reportar-banner");
+    banner.innerHTML = bannerHtml("ok","✅ Tus datos fueron capturados con éxito — folio "+folio+".");
+    toast("Guardado — folio "+folio);
+    setTimeout(function(){ if(banner.innerHTML.indexOf(folio)!==-1) banner.innerHTML = ""; }, 6000);
+  }
+
+  function clearFormFields(){
+    qs("f-folio").value = "";
+    MATERIALES.forEach(function(m){ qs("m-"+m.key).value = 0; });
+  }
+
+  function submitEntry(){
+    if(!configured){
+      qs("reportar-banner").innerHTML = bannerHtml("danger","Este reporte todavía no está configurado — falta la URL del Web App.");
+      return;
+    }
+    var tecnicoRaw = LOCKED_TECNICO || qs("f-tecnico").value;
+    var tecnico = normName(tecnicoRaw);
+    var folio = digitsOnly(qs("f-folio").value).replace(/^0+/,"");
+    var banner = qs("reportar-banner");
+    banner.innerHTML = "";
+    if(!tecnico){ banner.innerHTML = bannerHtml("warn","Escribe el nombre del técnico."); return; }
+    if(!folio){ banner.innerHTML = bannerHtml("warn","Escribe el folio de la orden."); return; }
+
+    var payload = Object.assign({action:"add", tecnico:tecnico, folio:folio}, readMatValues());
+
+    if(!LOCKED_TECNICO){
+      LOCKED_TECNICO = tecnico;
+      sessionStorage.setItem("ticket_tecnico", tecnico);
+    }
+
+    var btn = qs("btn-submit");
+    btn.disabled = true; btn.textContent = "Guardando…";
+    callApi(payload).then(function(result){
+      if(!result || result.error){ throw new Error((result && result.error) || "error"); }
+      clearFormFields();
+      showSavedBanner(folio);
+      return refreshList(true);
+    }).catch(function(){
+      toast("No se pudo guardar el folio "+folio+" — vuelve a intentar.", true);
+    }).finally(function(){
+      btn.disabled = false; btn.textContent = "Guardar reporte";
+    });
+  }
+
+  function wireTabs(){
+    document.querySelectorAll(".tab").forEach(function(t){
+      t.addEventListener("click", function(){
+        document.querySelectorAll(".tab").forEach(function(x){ x.classList.remove("active"); });
+        t.classList.add("active");
+        var target = t.dataset.tab;
+        qs("view-reportar").hidden = target!=="reportar";
+        qs("view-consolidado").hidden = target!=="consolidado";
+        if(target==="consolidado") refreshList(true);
+      });
+    });
+  }
+
+  function boot(){
+    renderMatGrid();
+    renderTecnicoChip();
+    renderConsolidado();
+    wireTabs();
+    qs("btn-submit").addEventListener("click", submitEntry);
+
+    if(!configured){
+      qs("reportar-banner").innerHTML = bannerHtml("danger","Falta configurar la URL del Web App en este archivo (variable WEBAPP_URL). Ver INSTRUCCIONES.md.");
+      qs("btn-submit").disabled = true;
+      return;
+    }
+
+    refreshList();
+    setInterval(function(){ refreshList(true); }, POLL_MS);
+  }
+
+  if(document.readyState === "loading"){ document.addEventListener("DOMContentLoaded", boot); } else { boot(); }
+})();
+</script>
+</body>
+</html>
