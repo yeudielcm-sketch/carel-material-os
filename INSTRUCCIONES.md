@@ -85,16 +85,23 @@ navegador mientras no cierren la pestaña. **Conviene repartir el enlace con
 distintas (`MARVIN ALEXIS MARTINEZ`, `ALEXIS MARTINEZ`, `MARVIN ALEXIS MARTINEZ
 CALVO`), y eso parte el consolidado en tres bloques.
 
+## Cuando cambia `Code.gs`
+
+Los cambios **no se aplican solos**. En el editor de Apps Script:
+**Implementar → Administrar implementaciones → lápiz → Versión: Nueva versión →
+Implementar**. La URL no cambia, así que no hay que volver a repartir enlaces.
+
 ## Cosas que conviene saber
 
 - Los datos quedan en la Hoja, pestaña **«Reportes»**, y se pueden abrir en
   cualquier momento.
-- **«Eliminar» y «vaciar bloque» borran la fila de verdad.** No hay papelera.
-  Cualquiera que abra el enlace puede vaciar el bloque de otro técnico.
-- El consolidado se refresca solo cada 20 segundos **aunque nadie lo esté
-  mirando**, en todos los teléfonos que tengan la página abierta. Con tres
-  técnicos entra en la cuota gratuita de Apps Script, pero sin margen para
-  crecer.
+- **Nada se borra.** «Archivar este bloque» escribe la fecha en la columna
+  `Copiada` y la orden desaparece de la app, pero la fila se queda. Es a
+  propósito: al Excel semanal solo llegan 7 de los 22 campos del mensaje, así
+  que esta hoja es el único lugar donde vive el resto.
+- El consolidado se refresca cada 20 segundos **solo cuando está a la vista**.
+  Con el formulario abierto en la calle no gasta señal ni cuota.
+- Cada técnico solo ve y corrige **sus** órdenes en la pestaña «Mis órdenes».
 - Quien tenga la URL `/exec` puede escribir en la Hoja sin identificarse — es la
   contraparte de que los técnicos no necesiten cuenta. La URL va dentro de la
   página publicada, así que no es un secreto.

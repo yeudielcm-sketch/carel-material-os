@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
-<title>Material de OS</title>
+<title>Reporte de OS</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@600;700;800&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
@@ -12,7 +12,8 @@
     --ground:#f5f6ee; --surface:#ffffff; --surface-2:#eceee0; --line:#d7dbc3;
     --text:#242a12; --muted:#767d5c; --muted-2:#94997a;
     --accent:#5c6b1f; --accent-ink:#f8fbe9; --accent-soft:#e6ecc9;
-    --ok:#2f7a8f; --ok-soft:#dfeef3; --warn:#a66a0a; --warn-soft:#f7ecd6; --danger:#c23b34; --danger-soft:#faded9;
+    --ok:#2f7a8f; --ok-soft:#dfeef3; --warn:#a66a0a; --warn-soft:#f7ecd6;
+    --danger:#c23b34; --danger-soft:#faded9;
     --radius-card:14px; --radius-ctl:9px;
   }
   @media (prefers-color-scheme: dark){
@@ -20,14 +21,16 @@
       --ground:#12140a; --surface:#1a1d0f; --surface-2:#212512; --line:#383f1e;
       --text:#eef1e0; --muted:#a3a986; --muted-2:#82886a;
       --accent:#b7d43a; --accent-ink:#1a2206; --accent-soft:#333d16;
-      --ok:#6fc6e0; --ok-soft:#16303a; --warn:#f0b429; --warn-soft:#3a2e10; --danger:#ef5350; --danger-soft:#3a1c1a;
+      --ok:#6fc6e0; --ok-soft:#16303a; --warn:#f0b429; --warn-soft:#3a2e10;
+      --danger:#ef5350; --danger-soft:#3a1c1a;
     }
   }
   :root[data-theme="dark"]{
     --ground:#12140a; --surface:#1a1d0f; --surface-2:#212512; --line:#383f1e;
     --text:#eef1e0; --muted:#a3a986; --muted-2:#82886a;
     --accent:#b7d43a; --accent-ink:#1a2206; --accent-soft:#333d16;
-    --ok:#6fc6e0; --ok-soft:#16303a; --warn:#f0b429; --warn-soft:#3a2e10; --danger:#ef5350; --danger-soft:#3a1c1a;
+    --ok:#6fc6e0; --ok-soft:#16303a; --warn:#f0b429; --warn-soft:#3a2e10;
+    --danger:#ef5350; --danger-soft:#3a1c1a;
   }
   *{box-sizing:border-box}
   html,body{margin:0;padding:0}
@@ -40,66 +43,99 @@
     letter-spacing:.2px; text-wrap:balance; margin:0}
   .mono{font-family:"IBM Plex Mono",ui-monospace,monospace; font-variant-numeric:tabular-nums}
 
-  .topbar{max-width:980px;margin:0 auto;padding:18px 18px 0}
+  .topbar{max-width:980px;margin:0 auto;padding:16px 18px 0}
   .topbar .brand{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
-  .topbar h1{font-size:26px;color:var(--text)}
+  .topbar h1{font-size:25px;color:var(--text)}
   .topbar .brand small{font-family:"IBM Plex Mono",monospace;font-size:11px;letter-spacing:.08em;
     text-transform:uppercase;color:var(--accent);background:var(--accent-soft);
     padding:3px 8px;border-radius:20px}
-  .topbar p.sub{color:var(--muted);font-size:13.5px;margin:4px 0 0;max-width:60ch}
+  .tecnico-chip{font-size:12.5px;color:var(--muted);margin-top:4px}
+  .tecnico-chip b{color:var(--text);font-weight:700}
+  .tecnico-chip a.change{color:var(--accent);text-decoration:none;margin-left:8px}
 
-  .tabs{max-width:980px;margin:16px auto 0;padding:0 18px;display:flex;gap:6px;
-    border-bottom:1px solid var(--line)}
+  .tabs{max-width:980px;margin:14px auto 0;padding:0 18px;display:flex;gap:4px;
+    border-bottom:1px solid var(--line);overflow-x:auto}
   .tab{appearance:none;border:none;background:none;color:var(--muted);font-family:inherit;
-    font-size:14.5px;font-weight:600;padding:10px 4px;margin-right:18px;cursor:pointer;
-    border-bottom:2.5px solid transparent;transition:.12s}
-  .tab:hover{color:var(--text)}
+    font-size:14px;font-weight:600;padding:10px 2px;margin-right:16px;cursor:pointer;
+    border-bottom:2.5px solid transparent;white-space:nowrap}
   .tab.active{color:var(--accent);border-bottom-color:var(--accent)}
-  .tab .n{display:inline-block;margin-left:6px;background:var(--surface-2);color:var(--muted);
+  .tab .n{display:inline-block;margin-left:5px;background:var(--surface-2);color:var(--muted);
     font-family:"IBM Plex Mono",monospace;font-size:11px;padding:1px 6px;border-radius:20px}
 
-  main.view{max-width:980px;margin:0 auto;padding:20px 18px 70px}
+  main.view{max-width:980px;margin:0 auto;padding:18px 18px 80px}
   main.view[hidden]{display:none}
 
   .ticket{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius-card);
-    max-width:480px;margin:0 auto;overflow:hidden;box-shadow:0 1px 2px rgba(0,0,0,.04)}
+    max-width:560px;margin:0 auto;overflow:hidden;box-shadow:0 1px 2px rgba(0,0,0,.04)}
   .ticket__band{height:6px;background:var(--accent)}
-  .ticket__head{padding:16px 18px 4px;display:flex;justify-content:space-between;align-items:flex-start;gap:10px}
+  .ticket__head{padding:15px 18px 2px;display:flex;justify-content:space-between;
+    align-items:flex-start;gap:10px}
   .ticket__head h2{font-size:19px}
-  .tecnico-chip{font-size:12px;color:var(--muted)}
-  .tecnico-chip b{color:var(--text);font-weight:700}
-  .tecnico-chip a.change{font-size:12px;color:var(--accent);text-decoration:none;white-space:nowrap;margin-left:6px}
-  .ticket__body{padding:14px 18px 20px}
+  .ticket__body{padding:12px 18px 20px}
 
-  .field{margin-bottom:14px}
-  .field label{display:block;font-size:11.5px;font-weight:700;text-transform:uppercase;
-    letter-spacing:.06em;color:var(--muted);margin-bottom:6px}
-  .field input[type=text]{
-    width:100%;background:var(--surface-2);border:1.5px solid var(--line);border-radius:var(--radius-ctl);
-    padding:12px 12px;font-size:17px;color:var(--text);font-family:"IBM Plex Mono",monospace}
-  .field input:focus{outline:none;border-color:var(--accent)}
+  .pasos{display:flex;gap:8px;padding:0 18px 10px;font-size:11.5px;color:var(--muted-2);
+    font-family:"IBM Plex Mono",monospace;text-transform:uppercase;letter-spacing:.05em}
+  .pasos span.on{color:var(--accent);font-weight:700}
 
-  .matgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:6px 0 18px}
+  fieldset.grupo{border:none;padding:0;margin:0 0 6px}
+  fieldset.grupo > legend{font-family:"IBM Plex Mono",monospace;font-size:10.5px;
+    text-transform:uppercase;letter-spacing:.09em;color:var(--muted-2);
+    padding:14px 0 8px;width:100%;border-bottom:1px dashed var(--line);margin-bottom:12px}
+
+  .campos{display:grid;grid-template-columns:1fr 1fr;gap:11px}
+  .campo{margin:0}
+  .campo.ancho{grid-column:1 / -1}
+  @media(max-width:430px){.campos{grid-template-columns:1fr}.campo{grid-column:1 / -1}}
+  .campo label{display:block;font-size:11px;font-weight:700;text-transform:uppercase;
+    letter-spacing:.06em;color:var(--muted);margin-bottom:5px}
+  .campo label .req{color:var(--accent)}
+  .campo input, .campo select, .campo textarea{
+    width:100%;background:var(--surface-2);border:1.5px solid var(--line);
+    border-radius:var(--radius-ctl);padding:11px 11px;font-size:16px;color:var(--text);
+    font-family:"IBM Plex Sans",sans-serif}
+  .campo input.mono, .campo input[inputmode=numeric]{font-family:"IBM Plex Mono",monospace}
+  .campo input:focus, .campo select:focus, .campo textarea:focus{outline:none;border-color:var(--accent)}
+  .campo input.malo{border-color:var(--danger)}
+  .campo .pista{font-size:11.5px;color:var(--muted-2);margin-top:4px}
+  .campo .pista.warn{color:var(--warn);font-weight:600}
+  .campo input[hidden]{display:none}
+
+  .nfibra{display:flex;align-items:center;gap:10px;background:var(--accent-soft);
+    border:1px solid var(--line);border-radius:var(--radius-ctl);padding:10px 12px;margin-bottom:4px}
+  .nfibra .et{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;
+    color:var(--muted)}
+  .nfibra input{width:74px;background:var(--surface);border:1.5px solid var(--line);
+    border-radius:8px;padding:7px 8px;font-family:"IBM Plex Mono",monospace;font-size:19px;
+    font-weight:700;color:var(--text);text-align:center}
+  .nfibra .suf{font-family:"Big Shoulders Display",sans-serif;font-size:21px;font-weight:800;
+    color:var(--accent)}
+
+  .matgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:6px 0 16px}
   @media(max-width:380px){.matgrid{grid-template-columns:1fr}}
   .matrow{background:var(--surface-2);border:1px solid var(--line);border-radius:var(--radius-ctl);
     padding:9px 10px}
+  .matrow.auto{opacity:.72}
   .matrow .mlabel{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px}
   .matrow .mlabel span.name{font-size:12px;font-weight:600;color:var(--text)}
   .matrow .mlabel span.col{font-family:"IBM Plex Mono",monospace;font-size:10px;color:var(--muted-2);
     background:var(--surface);border:1px solid var(--line);border-radius:5px;padding:1px 5px}
   .stepper{display:flex;align-items:stretch;gap:6px}
-  .stepper button{width:34px;flex:none;border:1px solid var(--line);background:var(--surface);
-    color:var(--text);font-size:18px;font-weight:700;border-radius:8px;cursor:pointer;line-height:1}
+  .stepper button{width:38px;flex:none;border:1px solid var(--line);background:var(--surface);
+    color:var(--text);font-size:19px;font-weight:700;border-radius:8px;cursor:pointer;line-height:1}
   .stepper button:active{background:var(--accent-soft);border-color:var(--accent)}
   .stepper input{width:100%;text-align:center;border:1px solid var(--line);background:var(--surface);
     border-radius:8px;font-family:"IBM Plex Mono",monospace;font-size:18px;font-weight:600;
     color:var(--text);padding:6px 2px;-moz-appearance:textfield}
-  .stepper input::-webkit-outer-spin-button,.stepper input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
-  .stepper input:focus{outline:none;border-color:var(--accent)}
+  .stepper input::-webkit-outer-spin-button,.stepper input::-webkit-inner-spin-button{
+    -webkit-appearance:none;margin:0}
 
   button.big{width:100%;border:none;border-radius:11px;padding:15px;font-size:16px;font-weight:700;
-    font-family:"IBM Plex Sans",sans-serif;cursor:pointer;background:var(--accent);color:var(--accent-ink)}
+    font-family:"IBM Plex Sans",sans-serif;cursor:pointer;background:var(--accent);
+    color:var(--accent-ink);margin-top:6px}
+  button.big.sec{background:var(--surface-2);color:var(--text);border:1.5px solid var(--line)}
   button.big:disabled{opacity:.55;cursor:not-allowed}
+  .botonera{display:flex;gap:9px;margin-top:14px;flex-wrap:wrap}
+  .botonera button.big{flex:1 1 180px;margin-top:0}
 
   .note{font-size:12px;color:var(--muted);text-align:center;margin-top:12px}
   .banner{border-radius:10px;padding:10px 13px;font-size:13px;margin-bottom:14px}
@@ -107,10 +143,15 @@
   .banner.danger{background:var(--danger-soft);color:var(--danger)}
   .banner.ok{background:var(--ok-soft);color:var(--ok);font-weight:600}
 
+  pre.mensaje{background:var(--surface-2);border:1px solid var(--line);border-radius:10px;
+    padding:13px;font-family:"IBM Plex Mono",monospace;font-size:12px;line-height:1.5;
+    white-space:pre-wrap;word-break:break-word;margin:0 0 12px;max-height:340px;overflow:auto;
+    color:var(--text)}
+
   .techblock{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius-card);
     margin-bottom:18px;overflow:hidden}
-  .techblock__head{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;
-    padding:13px 16px;border-bottom:1px solid var(--line);background:var(--surface-2)}
+  .techblock__head{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;
+    gap:10px;padding:12px 16px;border-bottom:1px solid var(--line);background:var(--surface-2)}
   .techblock__head h3{font-size:17px}
   .techblock__head .count{font-family:"IBM Plex Mono",monospace;font-size:12px;color:var(--muted)}
   .tablewrap{overflow-x:auto}
@@ -118,37 +159,48 @@
   th,td{padding:8px 11px;border-bottom:1px solid var(--line);text-align:left}
   th{background:var(--surface-2);color:var(--muted);font-weight:700;font-size:10.5px;
     text-transform:uppercase;letter-spacing:.05em}
+  th small{color:var(--muted-2);font-weight:600;display:block;font-size:9.5px}
   td.num{font-family:"IBM Plex Mono",monospace;text-align:right}
   td.folio{font-family:"IBM Plex Mono",monospace;color:var(--muted)}
-  th small{color:var(--muted-2);font-weight:600;display:block;font-size:9.5px}
-  .del{background:none;border:none;color:var(--muted-2);cursor:pointer;font-size:13px;padding:3px 6px;
-    border-radius:6px}
-  .del:hover{color:var(--danger);background:var(--danger-soft)}
-  .del.confirm{color:var(--danger);font-weight:700}
+  tr.pendiente td{background:var(--warn-soft)}
+  .pill{display:inline-block;font-size:10.5px;font-weight:700;padding:1px 7px;border-radius:20px;
+    font-family:"IBM Plex Mono",monospace}
+  .pill.falta{background:var(--warn-soft);color:var(--warn)}
+  .pill.dup{background:var(--danger-soft);color:var(--danger)}
+  .mini{background:none;border:1px solid var(--line);color:var(--muted);cursor:pointer;
+    font-size:12px;padding:4px 9px;border-radius:7px;font-family:inherit}
+  .mini:hover{border-color:var(--accent);color:var(--accent)}
+  .mini.confirm{color:var(--danger);border-color:var(--danger);font-weight:700}
 
-  .copyrow{display:flex;flex-wrap:wrap;gap:8px;padding:13px 16px}
+  .copyrow{display:flex;flex-wrap:wrap;gap:8px;padding:12px 16px}
   .copybtn{border:1.5px solid var(--line);background:var(--surface-2);color:var(--text);
     border-radius:9px;padding:9px 13px;font-size:13px;font-weight:600;cursor:pointer;
     font-family:"IBM Plex Sans",sans-serif;display:flex;align-items:center;gap:7px}
-  .copybtn .badge{font-family:"IBM Plex Mono",monospace;font-size:10.5px;background:var(--accent-soft);
-    color:var(--accent);padding:1px 6px;border-radius:20px}
-  .copybtn:hover{border-color:var(--accent)}
+  .copybtn.destacado{border-color:var(--accent);background:var(--accent-soft)}
+  .copybtn .badge{font-family:"IBM Plex Mono",monospace;font-size:10.5px;background:var(--surface);
+    color:var(--accent);padding:1px 6px;border-radius:20px;border:1px solid var(--line)}
   .footrow{display:flex;justify-content:flex-end;align-items:center;gap:10px;padding:11px 16px;
     border-top:1px dashed var(--line)}
-  .footrow button.clear{background:none;border:none;color:var(--muted);font-size:12.5px;cursor:pointer;
-    text-decoration:underline;font-family:inherit}
-  .footrow button.clear.confirm{color:var(--danger);font-weight:700}
   .empty{text-align:center;color:var(--muted);padding:40px 20px;border:1.5px dashed var(--line);
     border-radius:var(--radius-card)}
   .steps{background:var(--surface-2);border:1px dashed var(--line);border-radius:10px;
     padding:12px 14px;margin:0 0 18px;font-size:13px;color:var(--muted)}
   .steps b{color:var(--text)}
+  .steps code{font-family:"IBM Plex Mono",monospace;color:var(--accent);font-size:12px}
 
-  #toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%) translateY(0);
-    background:var(--text);color:var(--ground);padding:11px 18px;border-radius:30px;font-size:13.5px;
-    font-weight:600;box-shadow:0 6px 20px rgba(0,0,0,.25);opacity:0;pointer-events:none;
-    transition:opacity .2s, transform .2s; z-index:50; max-width:90vw; text-align:center}
-  #toast.show{opacity:1;transform:translateX(-50%) translateY(-4px)}
+  .orden{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius-card);
+    padding:12px 15px;margin-bottom:11px;display:flex;justify-content:space-between;
+    align-items:center;gap:12px;flex-wrap:wrap}
+  .orden .datos{min-width:0}
+  .orden .datos .l1{font-weight:700;font-size:14.5px}
+  .orden .datos .l2{font-size:12.5px;color:var(--muted);margin-top:2px}
+  .orden .acciones{display:flex;gap:7px;flex-wrap:wrap}
+
+  #toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);
+    background:var(--text);color:var(--ground);padding:11px 18px;border-radius:30px;
+    font-size:13.5px;font-weight:600;box-shadow:0 6px 20px rgba(0,0,0,.25);opacity:0;
+    pointer-events:none;transition:opacity .2s;z-index:50;max-width:90vw;text-align:center}
+  #toast.show{opacity:1}
   #toast.err{background:var(--danger)}
 
   @media (prefers-reduced-motion: reduce){ *{transition:none !important} }
@@ -157,47 +209,92 @@
 <body>
 <div class="topbar">
   <div class="brand">
-    <h1>Material de OS</h1>
+    <h1>Reporte de OS</h1>
     <small>FTTH &middot; CAREL</small>
   </div>
-  <p class="sub">Reporta el material que usaste al cerrar cada orden &mdash; reemplaza la hoja de papel. No necesitas cuenta ni iniciar sesi&oacute;n.</p>
+  <div id="tecnico-chip-wrap"></div>
 </div>
 
 <nav class="tabs">
-  <button class="tab active" data-tab="reportar" type="button">Reportar</button>
-  <button class="tab" data-tab="consolidado" type="button">Consolidado <span class="n" id="tab-count">0</span></button>
+  <button class="tab active" data-tab="reportar" type="button">Nueva orden</button>
+  <button class="tab" data-tab="mias" type="button">Mis &oacute;rdenes <span class="n" id="n-mias">0</span></button>
+  <button class="tab" data-tab="consolidado" type="button">Consolidado <span class="n" id="n-todas">0</span></button>
 </nav>
 
+<!-- ===================== PANTALLA 1 y 2 ===================== -->
 <main class="view" id="view-reportar">
-  <div id="reportar-banner"></div>
-  <div class="ticket">
+  <div id="banner-top"></div>
+
+  <div class="ticket" id="paso1">
     <div class="ticket__band"></div>
-    <div class="ticket__head">
-      <h2>Nuevo reporte</h2>
-      <div id="tecnico-chip-wrap"></div>
-    </div>
+    <div class="ticket__head"><h2 id="titulo-paso1">Nueva orden</h2></div>
+    <div class="pasos"><span class="on" id="p1lab">1 &middot; La orden</span><span>&rarr;</span><span id="p2lab">2 &middot; El material</span></div>
     <div class="ticket__body">
-      <div id="tecnico-picker" class="field" hidden>
-        <label for="f-tecnico">T&eacute;cnico</label>
+      <div id="tecnico-picker" class="campo ancho" hidden>
+        <label for="f-tecnico">T&eacute;cnico <span class="req">*</span></label>
         <input type="text" id="f-tecnico" list="tecnicos-list" placeholder="Tu nombre completo" autocomplete="off">
         <datalist id="tecnicos-list"></datalist>
       </div>
-      <div class="field">
-        <label for="f-folio">Folio de la orden</label>
-        <input type="text" id="f-folio" inputmode="numeric" placeholder="Ej. 58722595" autocomplete="off">
+
+      <div class="nfibra">
+        <span class="et">N&uacute;mero</span>
+        <input type="number" id="f-nfibra" min="1" step="1" inputmode="numeric">
+        <span class="suf">FIBRA</span>
+        <span class="pista" id="nfibra-pista" style="font-size:11.5px;color:var(--muted)"></span>
       </div>
+
+      <div id="form-campos"></div>
+
+      <div class="botonera">
+        <button class="big" id="btn-generar" type="button">Generar reporte</button>
+      </div>
+      <p class="note">El n&uacute;mero se reinicia cada lunes y es tuyo, no del equipo.</p>
+    </div>
+  </div>
+
+  <div class="ticket" id="paso-mensaje" hidden style="margin-top:16px">
+    <div class="ticket__band"></div>
+    <div class="ticket__head"><h2>Listo para WhatsApp</h2></div>
+    <div class="ticket__body">
+      <pre class="mensaje" id="salida-mensaje"></pre>
+      <div class="botonera">
+        <button class="big" id="btn-copiar-wa" type="button">&#128203; Copiar para WhatsApp</button>
+        <button class="big sec" id="btn-volver-editar" type="button">Corregir algo</button>
+      </div>
+      <div class="botonera">
+        <button class="big" id="btn-siguiente" type="button">Siguiente &rarr; capturar material</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="ticket" id="paso2" hidden>
+    <div class="ticket__band"></div>
+    <div class="ticket__head"><h2>El material</h2></div>
+    <div class="pasos"><span>1 &middot; La orden</span><span>&rarr;</span><span class="on">2 &middot; El material</span></div>
+    <div class="ticket__body">
+      <div id="paso2-resumen" class="steps"></div>
       <div class="matgrid" id="matgrid"></div>
-      <button class="big" id="btn-submit" type="button">Guardar reporte</button>
-      <p class="note">Los materiales en 0 se guardan como 0 &mdash; solo ajusta lo que usaste.</p>
+      <button class="big" id="btn-guardar-material" type="button">Guardar material</button>
+      <p class="note" id="nota-material"></p>
     </div>
   </div>
 </main>
 
+<!-- ===================== MIS ORDENES ===================== -->
+<main class="view" id="view-mias" hidden>
+  <div class="steps">
+    <b>Tus &oacute;rdenes de esta semana.</b> Puedes corregir cualquiera &mdash; se vuelve a abrir en el
+    formulario con todo lo que capturaste. Solo ves y editas las tuyas.
+  </div>
+  <div id="mias-body"></div>
+</main>
+
+<!-- ===================== CONSOLIDADO ===================== -->
 <main class="view" id="view-consolidado" hidden>
   <div class="steps">
-    <b>C&oacute;mo pasar esto al Excel:</b> por cada t&eacute;cnico, copia cada bloque de columnas y p&eacute;galo en la
-    primera fila vac&iacute;a de su bloque de &oacute;rdenes &mdash; en el mismo orden en que aparecen aqu&iacute;.
-    Son 5 pegados porque las columnas de material no est&aacute;n seguidas en la hoja.
+    <b>C&oacute;mo pasar esto al Excel</b> (hoja <code>MAT UTILIZADO</code>): por cada t&eacute;cnico, clic en la
+    primera fila vac&iacute;a y pega tres veces &mdash; <code>B</code>, <code>M</code> y <code>AD</code>.
+    Los botones chicos de abajo sirven si prefieres columna por columna.
   </div>
   <div id="consolidado-body"></div>
 </main>
@@ -209,313 +306,842 @@
   "use strict";
 
   // ====================================================================
-  // CONFIGURACIÓN — pega aquí la URL de tu Web App de Google Apps Script
-  // (termina en /exec). Ver INSTRUCCIONES.md para desplegarla.
+  // CONFIGURACIÓN — URL de la Web App de Google Apps Script (termina en
+  // /exec). Ver INSTRUCCIONES.md.
   // ====================================================================
   var WEBAPP_URL = "https://script.google.com/macros/s/AKfycbz-Y4q7z8DTcQWt9s0FgCpr8J3g2-3DnxI1U84E32B-9uxa5eK1QjgZzmEVe6IoDBTy/exec";
 
-  var POLL_MS = 20000; // refresco automático del consolidado
+  var POLL_MS = 20000;
+
+  // -------------------------------------------------------- definiciones ---
+
+  // Campos de la orden, en el mismo orden en que salen en el mensaje.
+  // lista:true  -> selector de los más usados, con "otro…" para escribir.
+  // recuerda:true -> se preselecciona lo último que usó este técnico.
+  var CAMPOS = [
+    {g:"La orden",   k:"cope",         lab:"COPE",              lista:true, recuerda:true, mayus:true},
+    {g:"La orden",   k:"folio",        lab:"FOLIO",             req:true, numerico:true},
+    {g:"La orden",   k:"tipoOs",       lab:"TIPO DE OS",        lista:true, req:true, mayus:true, ancho:true},
+    {g:"La orden",   k:"distrito",     lab:"DISTRITO",          lista:true, recuerda:true, mayus:true},
+    {g:"La orden",   k:"terminal",     lab:"TERMINAL",          lista:true, recuerda:true, mayus:true},
+    {g:"La orden",   k:"puerto",       lab:"PUERTO",            lista:true, numerico:true},
+
+    {g:"El cliente", k:"cliente",      lab:"CLIENTE",           req:true, mayus:true, ancho:true},
+    {g:"El cliente", k:"telefono",     lab:"TELEFONO",          req:true, numerico:true},
+    {g:"El cliente", k:"expediente",   lab:"EXPEDIENTE DE COPE", numerico:true},
+    {g:"El cliente", k:"direccion",    lab:"DIRECCION",         mayus:true, ancho:true},
+    {g:"El cliente", k:"barrio",       lab:"BARRIO",            lista:true, recuerda:true, mayus:true, ancho:true},
+
+    {g:"El equipo",  k:"serie",        lab:"SERIE",             req:true, mayus:true},
+    {g:"El equipo",  k:"modelo",       lab:"MODELO DE MODEM",   lista:true, mayus:true},
+    {g:"El equipo",  k:"cv",           lab:"CV",                lista:true, recuerda:true, mayus:true},
+    {g:"El equipo",  k:"retiraModem",  lab:"SE RETIRA MODEM",   mayus:true},
+
+    {g:"El trabajo", k:"metraje",      lab:"METRAJE (metros)",  lista:true, req:true, numerico:true},
+    {g:"El trabajo", k:"acometida",    lab:"ACOMETIDA",         fijas:["AEREO","SUBTERRANEO"], recuerda:true},
+    {g:"El trabajo", k:"fecha",        lab:"FECHA",             fecha:true},
+    {g:"El trabajo", k:"observaciones",lab:"OBSERVACIONES",     lista:true, mayus:true, ancho:true},
+    {g:"El trabajo", k:"autoriza",     lab:"AUTORIZA",          lista:true, mayus:true},
+    {g:"El trabajo", k:"nip",          lab:"NIP",               lista:true},
+    {g:"El trabajo", k:"vigencia",     lab:"VIGENCIA",          lista:true, mayus:true}
+  ];
 
   var MATERIALES = [
-    {key:"argollas",  label:"ARGOLLAS",    col:"M"},
-    {key:"taquetes",  label:"TAQUETES",    col:"O"},
-    {key:"roseta",    label:"ROSETA",      col:"Q"},
-    {key:"sellos",    label:"SELLOS",      col:"R"},
-    {key:"sincho",    label:"SINCHO",      col:"S"},
-    {key:"tensores",  label:"TENSORES",    col:"V"},
-    {key:"sujMarfil", label:"SUJ MARFIL",  col:"X"}
-  ];
-  var PASTE_GROUPS = [
-    {keys:["argollas"],                 label:"Columna M",   badge:"M"},
-    {keys:["taquetes"],                 label:"Columna O",   badge:"O"},
-    {keys:["roseta","sellos","sincho"], label:"Columnas Q:S", badge:"Q–S"},
-    {keys:["tensores"],                 label:"Columna V",   badge:"V"},
-    {keys:["sujMarfil"],                label:"Columna X",   badge:"X"}
+    {key:"argollas",  label:"ARGOLLAS",   col:"M", fijo:1},
+    {key:"taquetes",  label:"TAQUETES",   col:"O", fijo:3},
+    {key:"roseta",    label:"ROSETA",     col:"Q", fijo:1},
+    {key:"ont",       label:"ONT",        col:"Z", fijo:1},
+    {key:"sellos",    label:"SELLOS",     col:"R"},
+    {key:"sincho",    label:"SINCHO",     col:"S"},
+    {key:"tensores",  label:"TENSORES",   col:"V"},
+    {key:"sujMarfil", label:"SUJ MARFIL", col:"X"}
   ];
 
-  function stripAccents(s){return String(s).normalize("NFD").replace(/[̀-ͯ]/g,"");}
-  function normName(s){return stripAccents(s).toUpperCase().replace(/\s+/g," ").trim();}
-  function digitsOnly(s){return (String(s).match(/\d+/g)||[]).join("");}
-  function esc(s){return String(s).replace(/[&<>"]/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;"}[c];});}
-  function qs(id){return document.getElementById(id);}
+  // Bloque M:Z para el Excel. Las vacías son columnas que en 2026 nunca se
+  // usaron (SUJET. ACOM., MUELA, SINCHO G., CINTA, CABLE MARFIL, CAJA EXC.).
+  var BLOQUE_MZ = ["argollas","","taquetes","","roseta","sellos","sincho","","",
+                   "tensores","","sujMarfil","","ont"];
+  var BLOQUE_BG = ["folioExcel","telefono","fecha","tipoOs","tecnico","serie"];
+
+  var GRUPOS_SUELTOS = [
+    {keys:["argollas"],                 label:"M",   badge:"ARGOLLAS"},
+    {keys:["taquetes"],                 label:"O",   badge:"TAQUETES"},
+    {keys:["roseta","sellos","sincho"], label:"Q:S", badge:"ROSETA…SINCHO"},
+    {keys:["tensores"],                 label:"V",   badge:"TENSORES"},
+    {keys:["sujMarfil"],                label:"X",   badge:"SUJ MARFIL"},
+    {keys:["ont"],                      label:"Z",   badge:"ONT"}
+  ];
+
+  // -------------------------------------------------------------- apoyos ---
+
+  function qs(id){ return document.getElementById(id); }
+  function stripAccents(s){ return String(s).normalize("NFD").replace(/[̀-ͯ]/g,""); }
+  function normName(s){ return stripAccents(s).toUpperCase().replace(/\s+/g," ").trim(); }
+  function digitsOnly(s){ return (String(s).match(/\d+/g)||[]).join(""); }
+  function sinCeros(s){ return digitsOnly(s).replace(/^0+/,""); }
+  function esc(s){ return String(s==null?"":s).replace(/[&<>"]/g,function(c){
+    return {"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;"}[c]; }); }
+  function dosDig(n){ return (n<10?"0":"")+n; }
+
+  function hoyDDMMYYYY(){
+    var d = new Date();
+    return dosDig(d.getDate())+"/"+dosDig(d.getMonth()+1)+"/"+d.getFullYear();
+  }
+  function aISO(dmy){
+    var m = String(dmy||"").match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+    return m ? m[3]+"-"+dosDig(+m[2])+"-"+dosDig(+m[1]) : "";
+  }
+  function deISO(iso){
+    var m = String(iso||"").match(/^(\d{4})-(\d{2})-(\d{2})/);
+    return m ? m[3]+"/"+m[2]+"/"+m[1] : "";
+  }
+  function lunesDe(dmy){
+    var m = String(dmy||"").match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+    var d = m ? new Date(+m[3], +m[2]-1, +m[1]) : new Date();
+    var dow = d.getDay(), atras = (dow===0) ? 6 : dow-1;
+    var l = new Date(d.getFullYear(), d.getMonth(), d.getDate()-atras);
+    return "L"+l.getFullYear()+"-"+dosDig(l.getMonth()+1)+"-"+dosDig(l.getDate());
+  }
+
+  function modeloDeSerie(s){
+    var u = normName(s);
+    if (u.indexOf("ZTEG")===0) return "ZTE";
+    if (u.indexOf("HWTC")===0) return "HUAWEI";
+    if (u.indexOf("TPLK")===0) return "TP LINK";
+    return "";
+  }
 
   function toast(msg, isErr){
     var t = qs("toast");
     t.textContent = msg;
     t.className = "show" + (isErr?" err":"");
     clearTimeout(toast._h);
-    toast._h = setTimeout(function(){ t.className=""; }, 2600);
+    toast._h = setTimeout(function(){ t.className=""; }, 3000);
   }
 
   function copyText(text, btn){
-    var done=function(){ var o=btn.textContent; btn.textContent="✓ Copiado"; setTimeout(function(){btn.textContent=o;},1200); };
+    var original = btn ? btn.textContent : "";
+    var done = function(){
+      if(!btn) return;
+      btn.textContent = "✓ Copiado";
+      setTimeout(function(){ btn.textContent = original; }, 1400);
+    };
     if(navigator.clipboard && navigator.clipboard.writeText){
-      navigator.clipboard.writeText(text).then(done).catch(function(){fallbackCopy(text,done);});
-    } else fallbackCopy(text,done);
+      navigator.clipboard.writeText(text).then(done).catch(function(){ fallbackCopy(text,done); });
+    } else fallbackCopy(text, done);
   }
-  function fallbackCopy(text,done){
-    var ta=document.createElement("textarea"); ta.value=text;
-    ta.style.position="fixed"; ta.style.opacity="0"; document.body.appendChild(ta);
-    ta.select(); try{document.execCommand("copy");}catch(e){} document.body.removeChild(ta); done();
+  function fallbackCopy(text, done){
+    var ta = document.createElement("textarea");
+    ta.value = text; ta.style.position="fixed"; ta.style.opacity="0";
+    document.body.appendChild(ta); ta.select();
+    try{ document.execCommand("copy"); }catch(e){}
+    document.body.removeChild(ta); done();
   }
 
-  var STATE = {entries:[], tecnicos:[]};
-  var configured = WEBAPP_URL && WEBAPP_URL.indexOf("PEGA_AQUI") === -1;
+  function recordar(k, v){
+    try{ localStorage.setItem("carel_last_"+k, v); }catch(e){}
+  }
+  function recordado(k){
+    try{ return localStorage.getItem("carel_last_"+k) || ""; }catch(e){ return ""; }
+  }
+
+  // -------------------------------------------------------------- estado ---
+
+  var STATE = { entries:[], tecnicos:[], catalogos:{}, indice:[] };
+  var EDITANDO = null;   // id de la orden que se está corrigiendo
+  var ORDEN_ACTUAL = null;
 
   var params = new URLSearchParams(location.search);
-  var LOCKED_TECNICO = params.get("tec") ? normName(params.get("tec")) : (sessionStorage.getItem("ticket_tecnico")||"");
+  var TECNICO = params.get("tec") ? normName(params.get("tec"))
+              : (function(){ try{ return localStorage.getItem("carel_tecnico")||""; }catch(e){ return ""; } })();
 
-  function bannerHtml(kind,msg){ return '<div class="banner '+kind+'">'+esc(msg)+'</div>'; }
+  var configured = WEBAPP_URL && WEBAPP_URL.indexOf("PEGA_AQUI") === -1;
+
+  // ------------------------------------------------------------ el mensaje ---
+
+  /**
+   * Genera el texto tal cual se pega en WhatsApp. Calcado del formato que ya
+   * usa el equipo, líneas vacías incluidas — a propósito: quien lo lee del
+   * otro lado no tiene por qué notar que ahora lo escribe una app.
+   */
+  function mensajeWhatsApp(o){
+    var L = [];
+    L.push("*" + o.nFibra + "FIBRA* ");
+    L.push("*COPE:* " + o.cope + " ");
+    L.push("*FOLIO:* " + o.folio);
+    L.push("*TIPO DE OS:* " + o.tipoOs);
+    L.push("*DISTRITO* " + o.distrito);
+    L.push("*TERMINAL* " + o.terminal);
+    L.push("*PUERTO* " + o.puerto);
+    L.push("*CLIENTE:* " + o.cliente);
+    L.push("*TELEFONO:* " + o.telefono);
+    L.push("*EXPEDIENTE DE COPE:*  " + o.expediente);
+    L.push("*SERIE:* " + o.serie);
+    L.push("*MODELO DE MODEM:* " + o.modelo);
+    L.push("*CV* " + o.cv + " ");
+    L.push("*DIRECCION:* " + o.direccion);
+    L.push("*BARRIO:* " + o.barrio);
+    L.push("*METRAJE:*  " + o.metraje + " metros " + o.acometida);
+    L.push("*TECNICO* " + o.tecnico);
+    L.push("*FECHA* " + o.fecha);
+    L.push("*OBSERVACIONES:* " + o.observaciones + " ");
+    L.push("*AUTORIZA*  " + o.autoriza);
+    L.push("*NIP*  " + o.nip);
+    L.push("*VIGENCIA* " + o.vigencia);
+    L.push("*terminal* ");
+    L.push("*domicilio:* ");
+    L.push("*SUBTERRANEO* " + (o.acometida === "SUBTERRANEO" ? "✅" : ""));
+    L.push("*AEREO* " + (o.acometida === "AEREO" ? "✅" : ""));
+    if (String(o.retiraModem||"").trim()) L.push("Se retira modem: " + o.retiraModem);
+    return L.join("\n");
+  }
+
+  // ---------------------------------------------------------------- red ---
 
   function callApi(payload){
-    // Body como string sin cabecera Content-Type propia -> el navegador usa
-    // text/plain, que no dispara preflight CORS y Apps Script lo acepta bien.
-    return fetch(WEBAPP_URL, { method: "POST", body: JSON.stringify(payload) })
+    return fetch(WEBAPP_URL, { method:"POST", body:JSON.stringify(payload) })
+      .then(function(r){ return r.json(); })
+      .then(function(d){
+        if(d && d.error) throw new Error(d.error);
+        return d;
+      });
+  }
+
+  function fetchList(full){
+    return fetch(WEBAPP_URL + "?action=list" + (full ? "&full=1" : ""))
       .then(function(r){ return r.json(); });
   }
 
-  function fetchList(){
-    return fetch(WEBAPP_URL + "?action=list").then(function(r){ return r.json(); });
-  }
-
-  function refreshList(silent){
+  function refreshList(full){
     if(!configured) return Promise.resolve();
-    return fetchList().then(function(data){
-      if(data && Array.isArray(data.entries)){
-        STATE.entries = data.entries;
-        STATE.tecnicos = data.tecnicos || [];
-        renderConsolidado();
-        renderTecnicoChip();
-        clearConnBanner();
-      }
+    return fetchList(full).then(function(d){
+      if(!d || !Array.isArray(d.entries)) return;
+      STATE.entries = d.entries;
+      STATE.tecnicos = d.tecnicos || [];
+      STATE.catalogos = d.catalogos || {};
+      if(d.indice) STATE.indice = d.indice;
+      renderTodo();
+      qs("banner-top").innerHTML = "";
     }).catch(function(){
-      if(!silent) showConnBanner();
+      qs("banner-top").innerHTML = banner("danger",
+        "No se pudo conectar con el guardado — revisa tu señal. Lo que escribas no se pierde.");
     });
   }
 
-  function showConnBanner(){
-    qs("reportar-banner").innerHTML = bannerHtml("danger","No se pudo conectar con el guardado — revisa tu conexión e intenta de nuevo.");
-  }
-  function clearConnBanner(){
-    var b = qs("reportar-banner");
-    if(b.innerHTML.indexOf("No se pudo conectar")!==-1) b.innerHTML = "";
+  function banner(kind, msg){ return '<div class="banner '+kind+'">'+esc(msg)+'</div>'; }
+
+  // ------------------------------------------------------- el formulario ---
+
+  function opcionesDe(c){
+    if(c.fijas) return c.fijas.slice();
+    return (STATE.catalogos[c.k] || []).slice();
   }
 
+  function renderFormulario(){
+    var html = "", grupoActual = null;
+    CAMPOS.forEach(function(c){
+      if(c.g !== grupoActual){
+        if(grupoActual !== null) html += '</div></fieldset>';
+        html += '<fieldset class="grupo"><legend>'+esc(c.g)+'</legend><div class="campos">';
+        grupoActual = c.g;
+      }
+      html += campoHtml(c);
+    });
+    html += '</div></fieldset>';
+    qs("form-campos").innerHTML = html;
+    cablearCampos();
+  }
+
+  function campoHtml(c){
+    var req = c.req ? ' <span class="req">*</span>' : '';
+    var clase = "campo" + (c.ancho ? " ancho" : "");
+    var h = '<div class="'+clase+'"><label for="f-'+c.k+'">'+esc(c.lab)+req+'</label>';
+    var ops = opcionesDe(c);
+
+    if((c.lista || c.fijas) && ops.length){
+      h += '<select id="f-'+c.k+'" data-k="'+c.k+'">';
+      if(!c.req && !c.fijas) h += '<option value=""></option>';
+      ops.forEach(function(v){ h += '<option value="'+esc(v)+'">'+esc(v)+'</option>'; });
+      if(!c.fijas) h += '<option value="__otro__">otro… (escribir)</option>';
+      h += '</select>';
+      h += '<input type="text" id="o-'+c.k+'" data-otro="'+c.k+'" hidden placeholder="Escribe el valor nuevo" autocomplete="off">';
+    } else if(c.fecha){
+      h += '<input type="date" id="f-'+c.k+'" data-k="'+c.k+'">';
+    } else {
+      h += '<input type="text" id="f-'+c.k+'" data-k="'+c.k+'"'
+         + (c.numerico ? ' inputmode="numeric" class="mono"' : '')
+         + ' autocomplete="off">';
+    }
+    h += '<div class="pista" id="p-'+c.k+'"></div></div>';
+    return h;
+  }
+
+  function cablearCampos(){
+    // "otro…" descubre el campo de texto
+    qs("form-campos").querySelectorAll("select[data-k]").forEach(function(sel){
+      sel.addEventListener("change", function(){
+        var otro = qs("o-"+sel.dataset.k);
+        if(!otro) return;
+        if(sel.value === "__otro__"){ otro.hidden = false; otro.focus(); }
+        else { otro.hidden = true; otro.value = ""; }
+      });
+    });
+    // la serie deduce el modelo
+    var serie = qs("f-serie");
+    if(serie) serie.addEventListener("input", function(){
+      var m = modeloDeSerie(serie.value);
+      if(!m) return;
+      var sel = qs("f-modelo");
+      if(sel && sel.tagName === "SELECT"){
+        for(var i=0;i<sel.options.length;i++){
+          if(sel.options[i].value === m){
+            sel.value = m;
+            var otro = qs("o-modelo"); if(otro){ otro.hidden = true; otro.value=""; }
+            pista("modelo", "Deducido de la serie.", false);
+            return;
+          }
+        }
+      } else if(sel && !sel.value){ sel.value = m; }
+    });
+    // avisos de duplicado
+    ["folio","telefono"].forEach(function(k){
+      var el = qs("f-"+k);
+      if(el) el.addEventListener("change", function(){ avisarDuplicado(k); });
+    });
+    // el metraje sugiere los tensores
+    var met = qs("f-metraje");
+    if(met) met.addEventListener("change", function(){ sugerirTensores(); });
+  }
+
+  function pista(k, texto, esWarn){
+    var p = qs("p-"+k);
+    if(!p) return;
+    p.textContent = texto || "";
+    p.className = "pista" + (esWarn ? " warn" : "");
+  }
+
+  function leerCampo(k){
+    var c = CAMPOS.filter(function(x){ return x.k===k; })[0] || {};
+    var el = qs("f-"+k);
+    if(!el) return "";
+    var v;
+    if(el.tagName === "SELECT"){
+      v = el.value === "__otro__" ? (qs("o-"+k) ? qs("o-"+k).value : "") : el.value;
+    } else if(c.fecha){
+      v = deISO(el.value);
+    } else {
+      v = el.value;
+    }
+    v = String(v||"").trim();
+    if(c.mayus) v = normName(v);
+    if(c.numerico && k !== "folio") v = digitsOnly(v);
+    return v;
+  }
+
+  function ponerCampo(k, valor){
+    var c = CAMPOS.filter(function(x){ return x.k===k; })[0] || {};
+    var el = qs("f-"+k);
+    if(!el) return;
+    valor = String(valor==null?"":valor);
+    if(c.fecha){ el.value = aISO(valor) || aISO(hoyDDMMYYYY()); return; }
+    if(el.tagName === "SELECT"){
+      var existe = false;
+      for(var i=0;i<el.options.length;i++) if(el.options[i].value === valor) existe = true;
+      if(existe){ el.value = valor; }
+      else if(valor){
+        el.value = "__otro__";
+        var otro = qs("o-"+k);
+        if(otro){ otro.hidden = false; otro.value = valor; }
+      } else { el.value = ""; }
+      return;
+    }
+    el.value = valor;
+  }
+
+  function leerOrden(){
+    var o = { tecnico: TECNICO, nFibra: parseInt(qs("f-nfibra").value,10) || 0 };
+    CAMPOS.forEach(function(c){ o[c.k] = leerCampo(c.k); });
+    return o;
+  }
+
+  function limpiarFormulario(){
+    CAMPOS.forEach(function(c){
+      var recordadoV = c.recuerda ? recordado(c.k) : "";
+      ponerCampo(c.k, c.fecha ? hoyDDMMYYYY() : recordadoV);
+      pista(c.k, "");
+    });
+    if(!leerCampo("acometida")) ponerCampo("acometida", "AEREO");
+    qs("f-nfibra").value = siguienteNFibra();
+    actualizarPistaNFibra();
+  }
+
+  // --------------------------------------------------- avisos y sugerencias ---
+
+  var N_SUGERIDO = 0;
+
+  function siguienteNFibra(){
+    var semana = lunesDe(hoyDDMMYYYY()), max = 0;
+    todasConocidas().forEach(function(e){
+      if(normName(e.tecnico) !== TECNICO) return;
+      if(lunesDe(e.fecha) !== semana) return;
+      if(e.nFibra > max) max = e.nFibra;
+    });
+    N_SUGERIDO = max + 1;
+    return N_SUGERIDO;
+  }
+
+  /**
+   * El índice completo (incluidas las archivadas) se pide una sola vez al
+   * arrancar, así que se le suman las de la sesión para que un folio guardado
+   * hace un minuto también avise.
+   */
+  function todasConocidas(){
+    var vistos = {}, out = [];
+    STATE.indice.forEach(function(r){
+      var e = { folio:r[0], telefono:r[1], fecha:r[2], tecnico:r[3], nFibra:r[4], id:r[5]||"" };
+      if(e.id) vistos[e.id] = true;
+      out.push(e);
+    });
+    STATE.entries.forEach(function(e){
+      if(vistos[e.id]) return;
+      out.push({ folio:e.folio, telefono:e.telefono, fecha:e.fecha,
+                 tecnico:e.tecnico, nFibra:e.nFibra, id:e.id });
+    });
+    return out;
+  }
+
+  function actualizarPistaNFibra(){
+    var p = qs("nfibra-pista");
+    if(p) p.textContent = "semana del " + lunesDe(hoyDDMMYYYY()).slice(1).split("-").reverse().join("/");
+  }
+
+  /** Avisa, nunca bloquea. La decisión de si es error o revisita es del técnico. */
+  function buscarPrevias(campo, valor){
+    if(!valor) return [];
+    var comp = campo === "folio" ? sinCeros(valor) : digitsOnly(valor);
+    if(!comp) return [];
+    return todasConocidas().filter(function(e){
+      if(EDITANDO && e.id === EDITANDO) return false;
+      var v = campo === "folio" ? sinCeros(e.folio) : digitsOnly(e.telefono);
+      return v === comp;
+    });
+  }
+
+  function avisarDuplicado(k){
+    var previas = buscarPrevias(k, leerCampo(k));
+    if(!previas.length){ pista(k, ""); return; }
+    var p = previas[previas.length-1];
+    var que = k === "folio" ? "Este folio" : "Este teléfono";
+    pista(k, "⚠ " + que + " ya aparece: " + p.fecha + ", folio " + p.folio +
+             ", " + p.tecnico + ". Puedes guardar igual.", true);
+  }
+
+  function sugerirTensores(){
+    var met = parseInt(leerCampo("metraje"),10) || 0;
+    if(!met) return;
+    var sug = Math.ceil(met/50)*2;
+    var el = qs("m-tensores");
+    if(el && (!el.value || el.value === "0")) el.value = sug;
+    var nota = qs("nota-material");
+    if(nota) nota.textContent = "Con " + met + " metros la fórmula del Excel da " + sug +
+      " tensores. Es una sugerencia — en 2026 el valor real fue distinto en 4 de cada 10 órdenes.";
+  }
+
+  // ------------------------------------------------------------ material ---
+
   function renderMatGrid(){
-    qs("matgrid").innerHTML = MATERIALES.map(function(m){ return (
-      '<div class="matrow">' +
-        '<div class="mlabel"><span class="name">'+m.label+'</span><span class="col">'+m.col+'</span></div>' +
+    qs("matgrid").innerHTML = MATERIALES.map(function(m){
+      return '<div class="matrow'+(m.fijo!==undefined?' auto':'')+'">' +
+        '<div class="mlabel"><span class="name">'+m.label+'</span>' +
+        '<span class="col">'+m.col+'</span></div>' +
         '<div class="stepper">' +
           '<button type="button" data-step="-1" data-key="'+m.key+'">−</button>' +
-          '<input type="number" inputmode="numeric" min="0" step="1" value="0" id="m-'+m.key+'" onfocus="this.select()">' +
+          '<input type="number" inputmode="numeric" min="0" step="1" value="'+
+            (m.fijo!==undefined?m.fijo:0)+'" id="m-'+m.key+'" onfocus="this.select()">' +
           '<button type="button" data-step="1" data-key="'+m.key+'">+</button>' +
-        '</div></div>'
-    ); }).join("");
+        '</div></div>';
+    }).join("");
     qs("matgrid").querySelectorAll("button[data-step]").forEach(function(b){
       b.addEventListener("click", function(){
         var inp = qs("m-"+b.dataset.key);
-        var cur = parseInt(inp.value||"0",10) || 0;
-        var next = Math.max(0, cur + parseInt(b.dataset.step,10));
-        inp.value = next;
+        inp.value = Math.max(0, (parseInt(inp.value||"0",10)||0) + parseInt(b.dataset.step,10));
       });
     });
+  }
+
+  function leerMaterial(){
+    var out = {};
+    MATERIALES.forEach(function(m){
+      out[m.key] = Math.max(0, parseInt(qs("m-"+m.key).value||"0",10) || 0);
+    });
+    return out;
+  }
+
+  function ponerMaterial(e){
+    MATERIALES.forEach(function(m){
+      var v = e && e[m.key] !== undefined ? e[m.key] : (m.fijo!==undefined ? m.fijo : 0);
+      qs("m-"+m.key).value = v;
+    });
+  }
+
+  // --------------------------------------------------------------- flujo ---
+
+  function irAPaso(n){
+    qs("paso1").hidden        = n !== 1;
+    qs("paso-mensaje").hidden = n !== 1.5;
+    qs("paso2").hidden        = n !== 2;
+    window.scrollTo(0,0);
+  }
+
+  function validar(o){
+    var faltan = [];
+    CAMPOS.forEach(function(c){ if(c.req && !o[c.k]) faltan.push(c.lab); });
+    if(!o.tecnico) faltan.push("TÉCNICO");
+    return faltan;
+  }
+
+  function generarReporte(){
+    if(!TECNICO){
+      TECNICO = normName(qs("f-tecnico") ? qs("f-tecnico").value : "");
+      if(TECNICO){ try{ localStorage.setItem("carel_tecnico", TECNICO); }catch(e){} renderTecnicoChip(); }
+    }
+    var o = leerOrden();
+    var faltan = validar(o);
+    if(faltan.length){
+      qs("banner-top").innerHTML = banner("warn", "Falta llenar: " + faltan.join(", ") + ".");
+      window.scrollTo(0,0);
+      return;
+    }
+    qs("banner-top").innerHTML = "";
+    ORDEN_ACTUAL = o;
+    qs("salida-mensaje").textContent = mensajeWhatsApp(o);
+    irAPaso(1.5);
+  }
+
+  function guardarOrdenYSeguir(){
+    var o = ORDEN_ACTUAL;
+    if(!o) return;
+    var btn = qs("btn-siguiente");
+    btn.disabled = true; btn.textContent = "Guardando…";
+
+    var payload = Object.assign({}, o);
+    if(EDITANDO){
+      payload.action = "updateOrden";
+      payload.id = EDITANDO;
+    } else {
+      payload.action = "addOrden";
+      // Clave estable: si la señal se cae después de guardar y el técnico
+      // reintenta, el backend reconoce la misma orden y no escribe otra fila.
+      payload.claveCliente = [TECNICO, sinCeros(o.folio), digitsOnly(o.telefono), o.fecha].join("|");
+      // Si no tocó el número, que lo asigne el servidor: el teléfono puede
+      // llevar una lista vieja y proponer uno que otro ya usó.
+      if(o.nFibra === N_SUGERIDO) payload.nFibra = 0;
+    }
+
+    callApi(payload).then(function(r){
+      var id = EDITANDO || r.id;
+      if(r.nFibra){ o.nFibra = r.nFibra; qs("f-nfibra").value = r.nFibra; }
+      ORDEN_ACTUAL = Object.assign({}, o, {id:id});
+      qs("paso2-resumen").innerHTML =
+        "<b>Folio " + esc(o.folio) + "</b> — " + esc(o.cliente) +
+        "<br>" + esc(o.metraje) + " metros " + esc(o.acometida) + " · " + esc(o.tipoOs);
+      var previa = STATE.entries.filter(function(e){ return e.id === id; })[0];
+      ponerMaterial(previa);
+      sugerirTensores();
+      irAPaso(2);
+      return refreshList();
+    }).catch(function(err){
+      toast("No se pudo guardar la orden — vuelve a intentar.", true);
+      qs("banner-top").innerHTML = banner("danger",
+        "No se guardó: " + err.message + ". El mensaje de WhatsApp ya lo puedes copiar igual.");
+    }).finally(function(){
+      btn.disabled = false; btn.textContent = "Siguiente → capturar material";
+    });
+  }
+
+  function guardarMaterial(){
+    if(!ORDEN_ACTUAL || !ORDEN_ACTUAL.id) return;
+    var btn = qs("btn-guardar-material");
+    btn.disabled = true; btn.textContent = "Guardando…";
+    var payload = Object.assign({ action:"saveMaterial", id:ORDEN_ACTUAL.id, tecnico:TECNICO },
+                                leerMaterial());
+    callApi(payload).then(function(){
+      CAMPOS.forEach(function(c){ if(c.recuerda) recordar(c.k, ORDEN_ACTUAL[c.k]); });
+      qs("banner-top").innerHTML = banner("ok",
+        "✅ Capturado con éxito — folio " + ORDEN_ACTUAL.folio + ".");
+      toast("Capturado con éxito");
+      EDITANDO = null; ORDEN_ACTUAL = null;
+      limpiarFormulario(); ponerMaterial(null);
+      qs("titulo-paso1").textContent = "Nueva orden";
+      irAPaso(1);
+      return refreshList();
+    }).catch(function(){
+      toast("No se pudo guardar el material — vuelve a intentar.", true);
+    }).finally(function(){
+      btn.disabled = false; btn.textContent = "Guardar material";
+    });
+  }
+
+  function editarOrden(id){
+    var e = STATE.entries.filter(function(x){ return x.id === id; })[0];
+    if(!e) return;
+    if(normName(e.tecnico) !== TECNICO){ toast("Esa orden no es tuya.", true); return; }
+    EDITANDO = id;
+    ORDEN_ACTUAL = null;
+    qs("f-nfibra").value = e.nFibra || 1;
+    CAMPOS.forEach(function(c){ ponerCampo(c.k, e[c.k]); pista(c.k,""); });
+    ponerMaterial(e);
+    qs("titulo-paso1").textContent = "Corrigiendo el folio " + e.folio;
+    irAPaso(1);
+    activarTab("reportar");
+    toast("Corrige lo que haga falta y vuelve a generar.");
+  }
+
+  // ------------------------------------------------------------- render ---
+
+  function renderTodo(){
+    renderTecnicoChip();
+    renderMias();
+    renderConsolidado();
   }
 
   function renderTecnicoChip(){
     var wrap = qs("tecnico-chip-wrap");
     var picker = qs("tecnico-picker");
-    if(LOCKED_TECNICO){
-      wrap.innerHTML = '<div class="tecnico-chip">Técnico: <b>'+esc(LOCKED_TECNICO)+'</b><a class="change" href="#" id="change-tec">cambiar</a></div>';
-      picker.hidden = true;
-      qs("change-tec").addEventListener("click", function(e){
-        e.preventDefault(); LOCKED_TECNICO=""; sessionStorage.removeItem("ticket_tecnico");
+    if(TECNICO){
+      wrap.innerHTML = '<div class="tecnico-chip">Técnico: <b>'+esc(TECNICO)+
+        '</b><a class="change" href="#" id="change-tec">cambiar</a></div>';
+      if(picker) picker.hidden = true;
+      qs("change-tec").addEventListener("click", function(ev){
+        ev.preventDefault();
+        TECNICO = "";
+        try{ localStorage.removeItem("carel_tecnico"); }catch(e){}
         var url = new URL(location.href); url.searchParams.delete("tec");
         history.replaceState(null,"",url.toString());
         renderTecnicoChip();
       });
     } else {
-      wrap.innerHTML = "";
-      picker.hidden = false;
+      wrap.innerHTML = '<div class="tecnico-chip">Escribe tu nombre abajo para empezar.</div>';
+      if(picker) picker.hidden = false;
       var dl = qs("tecnicos-list");
-      dl.innerHTML = STATE.tecnicos.map(function(t){ return '<option value="'+esc(t)+'">'; }).join("");
+      if(dl) dl.innerHTML = STATE.tecnicos.map(function(t){
+        return '<option value="'+esc(t)+'">'; }).join("");
     }
   }
 
-  function groupByTecnico(entries){
-    var order = []; var map = {};
-    entries.forEach(function(e){
-      if(!map[e.tecnico]){ map[e.tecnico] = []; order.push(e.tecnico); }
-      map[e.tecnico].push(e);
+  function mias(){
+    return STATE.entries.filter(function(e){ return normName(e.tecnico) === TECNICO; });
+  }
+
+  function renderMias(){
+    var lista = mias();
+    qs("n-mias").textContent = lista.length;
+    qs("n-todas").textContent = STATE.entries.length;
+    var body = qs("mias-body");
+    if(!lista.length){
+      body.innerHTML = '<div class="empty">Aún no has capturado órdenes.<br>' +
+        'Las que guardes aparecen aquí y las puedes corregir.</div>';
+      return;
+    }
+    body.innerHTML = lista.map(function(e){
+      var falta = e.materialOk ? "" : '<span class="pill falta">falta material</span>';
+      return '<div class="orden"><div class="datos">' +
+        '<div class="l1">' + e.nFibra + 'FIBRA · folio ' + esc(e.folio) + ' ' + falta + '</div>' +
+        '<div class="l2">' + esc(e.cliente || "—") + ' · ' + esc(e.fecha) +
+        ' · ' + esc(e.metraje) + ' m ' + esc(e.acometida) + '</div></div>' +
+        '<div class="acciones">' +
+        '<button class="mini" data-wa="'+e.id+'">Copiar WhatsApp</button>' +
+        '<button class="mini" data-edit="'+e.id+'">Corregir</button>' +
+        '</div></div>';
+    }).join("");
+    body.querySelectorAll("[data-edit]").forEach(function(b){
+      b.addEventListener("click", function(){ editarOrden(b.dataset.edit); });
     });
-    return order.map(function(name){ return {name:name, rows:map[name]}; });
+    body.querySelectorAll("[data-wa]").forEach(function(b){
+      b.addEventListener("click", function(){
+        var e = STATE.entries.filter(function(x){ return x.id === b.dataset.wa; })[0];
+        if(e) copyText(mensajeWhatsApp(e), b);
+      });
+    });
+  }
+
+  function valorParaExcel(e, clave){
+    if(clave === "") return "";
+    if(clave === "folioExcel") return sinCeros(e.folio);
+    if(e[clave] === undefined) return "";
+    return e[clave];
   }
 
   function renderConsolidado(){
-    qs("tab-count").textContent = STATE.entries.length;
-    var groups = groupByTecnico(STATE.entries);
     var body = qs("consolidado-body");
-    if(groups.length===0){
-      body.innerHTML = '<div class="empty">Aún no hay reportes esta semana.<br>En cuanto un técnico guarde uno, aparece aquí.</div>';
+    if(!STATE.entries.length){
+      body.innerHTML = '<div class="empty">Aún no hay órdenes sin pegar.<br>' +
+        'En cuanto alguien guarde una, aparece aquí.</div>';
       return;
     }
-    body.innerHTML = groups.map(renderTechBlock).join("");
-    body.querySelectorAll("[data-copy-group]").forEach(function(btn){
-      btn.addEventListener("click", function(){
-        var tec = btn.dataset.tec;
-        var keys = btn.dataset.copyGroup.split(",");
-        var rows = STATE.entries.filter(function(e){ return e.tecnico===tec; });
-        var tsv = rows.map(function(r){ return keys.map(function(k){ return r[k] || 0; }).join("\t"); }).join("\n");
-        copyText(tsv, btn);
+    var orden = [], mapa = {};
+    STATE.entries.forEach(function(e){
+      if(!mapa[e.tecnico]){ mapa[e.tecnico] = []; orden.push(e.tecnico); }
+      mapa[e.tecnico].push(e);
+    });
+    body.innerHTML = orden.map(function(t){ return bloqueTecnico(t, mapa[t]); }).join("");
+    cablearConsolidado();
+  }
+
+  function bloqueTecnico(nombre, filas){
+    var cabMat = MATERIALES.map(function(m){
+      return "<th>"+m.label+"<small>"+m.col+"</small></th>"; }).join("");
+
+    var cuerpo = filas.map(function(e, i){
+      var otras = function(campo, valor){
+        return buscarPrevias(campo, valor).filter(function(p){ return p.id !== e.id; });
+      };
+      var dupF = otras("folio", e.folio).length;
+      var dupT = otras("telefono", e.telefono).filter(function(p){
+        return sinCeros(p.folio) !== sinCeros(e.folio); }).length;
+      var avisos = (dupF ? ' <span class="pill dup">folio repetido</span>' : '') +
+                   (dupT ? ' <span class="pill dup">tel repetido</span>' : '') +
+                   (e.materialOk ? '' : ' <span class="pill falta">sin material</span>');
+      return '<tr'+(e.materialOk?'':' class="pendiente"')+'><td class="mono">'+(i+1)+'</td>' +
+        '<td class="folio">'+esc(sinCeros(e.folio))+avisos+'</td>' +
+        '<td class="mono">'+esc(e.fecha)+'</td>' +
+        '<td class="mono">'+esc(e.metraje)+'</td>' +
+        MATERIALES.map(function(m){
+          return '<td class="num mono">'+(e[m.key]||0)+'</td>'; }).join("") +
+        '</tr>';
+    }).join("");
+
+    var sueltos = GRUPOS_SUELTOS.map(function(g){
+      return '<button class="copybtn" data-cols="'+g.keys.join(",")+'" data-tec="'+esc(nombre)+'">' +
+        g.label+' <span class="badge">'+g.badge+'</span></button>'; }).join("");
+
+    return '<div class="techblock"><div class="techblock__head"><h3>'+esc(nombre)+'</h3>' +
+      '<span class="count">'+filas.length+' orden(es)</span></div>' +
+      '<div class="tablewrap"><table><thead><tr><th>#</th><th>Folio</th><th>Fecha</th>' +
+      '<th>Metraje<small>AD</small></th>'+cabMat+'</tr></thead><tbody>'+cuerpo+'</tbody></table></div>' +
+      '<div class="copyrow">' +
+        '<button class="copybtn destacado" data-bg="1" data-tec="'+esc(nombre)+'">' +
+          'Pegar en B <span class="badge">B:G</span></button>' +
+        '<button class="copybtn destacado" data-mz="1" data-tec="'+esc(nombre)+'">' +
+          'Pegar en M <span class="badge">M:Z</span></button>' +
+        '<button class="copybtn destacado" data-ad="1" data-tec="'+esc(nombre)+'">' +
+          'Pegar en AD <span class="badge">AD</span></button>' +
+      '</div>' +
+      '<div class="copyrow" style="padding-top:0">'+sueltos+'</div>' +
+      '<div class="footrow"><button class="mini" data-copiado="'+esc(nombre)+'">' +
+        'Ya lo pegué — archivar este bloque</button></div></div>';
+  }
+
+  function filasDe(tec){
+    return STATE.entries.filter(function(e){ return e.tecnico === tec; });
+  }
+  function tsv(filas, claves){
+    return filas.map(function(e){
+      return claves.map(function(c){ return valorParaExcel(e, c); }).join("\t");
+    }).join("\n");
+  }
+
+  function cablearConsolidado(){
+    var body = qs("consolidado-body");
+    body.querySelectorAll("[data-bg]").forEach(function(b){
+      b.addEventListener("click", function(){ copyText(tsv(filasDe(b.dataset.tec), BLOQUE_BG), b); });
+    });
+    body.querySelectorAll("[data-mz]").forEach(function(b){
+      b.addEventListener("click", function(){ copyText(tsv(filasDe(b.dataset.tec), BLOQUE_MZ), b); });
+    });
+    body.querySelectorAll("[data-ad]").forEach(function(b){
+      b.addEventListener("click", function(){ copyText(tsv(filasDe(b.dataset.tec), ["metraje"]), b); });
+    });
+    body.querySelectorAll("[data-cols]").forEach(function(b){
+      b.addEventListener("click", function(){
+        copyText(tsv(filasDe(b.dataset.tec), b.dataset.cols.split(",")), b);
       });
     });
-    body.querySelectorAll("[data-del]").forEach(function(btn){
-      btn.addEventListener("click", function(){ handleDeleteClick(btn); });
-    });
-    body.querySelectorAll("[data-clear-tec]").forEach(function(btn){
-      btn.addEventListener("click", function(){ handleClearTecClick(btn); });
+    body.querySelectorAll("[data-copiado]").forEach(function(b){
+      b.addEventListener("click", function(){ archivarBloque(b); });
     });
   }
 
-  function renderTechBlock(g){
-    var rowsHtml = g.rows.map(function(r,i){
-      return "<tr><td class=\"mono\">"+(i+1)+"</td><td class=\"folio\">"+esc(r.folio||"—")+"</td>" +
-        MATERIALES.map(function(m){ return '<td class="num mono">'+(r[m.key]||0)+'</td>'; }).join("") +
-        '<td><button class="del" data-del="'+r.id+'" data-tec="'+esc(g.name)+'">eliminar</button></td></tr>';
-    }).join("");
-    var copyBtns = PASTE_GROUPS.map(function(pg){
-      return '<button class="copybtn" data-copy-group="'+pg.keys.join(",")+'" data-tec="'+esc(g.name)+'">' +
-        '📋 '+pg.label+' <span class="badge">'+pg.badge+'</span></button>';
-    }).join("");
-    var headCols = MATERIALES.map(function(m){ return "<th>"+m.label+"<small>"+m.col+"</small></th>"; }).join("");
-    return '<div class="techblock"><div class="techblock__head"><h3>'+esc(g.name)+'</h3>' +
-      '<span class="count">'+g.rows.length+' orden(es)</span></div>' +
-      '<div class="tablewrap"><table><thead><tr><th>#</th><th>Folio</th>'+headCols+'<th></th></tr></thead>' +
-      '<tbody>'+rowsHtml+'</tbody></table></div>' +
-      '<div class="copyrow">'+copyBtns+'</div>' +
-      '<div class="footrow"><button class="clear" data-clear-tec="'+esc(g.name)+'">Ya lo pegué — vaciar este bloque</button></div>' +
-      '</div>';
-  }
-
-  function handleDeleteClick(btn){
+  function archivarBloque(btn){
     if(btn.dataset.armed !== "1"){
-      btn.dataset.armed = "1"; btn.textContent = "¿seguro?"; btn.classList.add("confirm");
-      setTimeout(function(){ if(btn.isConnected){ btn.dataset.armed="0"; btn.textContent="eliminar"; btn.classList.remove("confirm"); } }, 3500);
-      return;
-    }
-    var id = btn.dataset.del;
-    btn.disabled = true;
-    callApi({action:"delete", id:id}).then(function(){
-      return refreshList();
-    }).then(function(){
-      toast("Reporte eliminado.");
-    }).catch(function(){
-      toast("No se pudo eliminar — intenta de nuevo.", true);
-      btn.disabled = false;
-    });
-  }
-
-  function handleClearTecClick(btn){
-    if(btn.dataset.armed !== "1"){
-      btn.dataset.armed = "1"; btn.textContent = "¿Seguro? Se borran sus filas ya pegadas";
+      btn.dataset.armed = "1";
+      btn.textContent = "¿Seguro? Se quitan de la lista (no se borran)";
       btn.classList.add("confirm");
-      setTimeout(function(){ if(btn.isConnected){ btn.dataset.armed="0"; btn.textContent="Ya lo pegué — vaciar este bloque"; btn.classList.remove("confirm"); } }, 4000);
+      setTimeout(function(){
+        if(btn.isConnected){
+          btn.dataset.armed = "0";
+          btn.textContent = "Ya lo pegué — archivar este bloque";
+          btn.classList.remove("confirm");
+        }
+      }, 4000);
       return;
     }
-    var tec = btn.dataset.clearTec;
+    var tec = btn.dataset.copiado;
     btn.disabled = true;
-    callApi({action:"clearTec", tecnico:tec}).then(function(){
+    callApi({ action:"marcarCopiada", tecnico:tec }).then(function(r){
+      toast("Archivadas " + r.marcadas + " órdenes de " + tec + ".");
       return refreshList();
-    }).then(function(){
-      toast("Bloque de "+tec+" vaciado.");
     }).catch(function(){
-      toast("No se pudo vaciar — intenta de nuevo.", true);
+      toast("No se pudo archivar — intenta de nuevo.", true);
       btn.disabled = false;
     });
   }
 
-  function readMatValues(){
-    var out = {};
-    MATERIALES.forEach(function(m){ out[m.key] = Math.max(0, parseInt(qs("m-"+m.key).value||"0",10) || 0); });
-    return out;
-  }
+  // -------------------------------------------------------------- tabs ---
 
-  function showSavedBanner(folio){
-    var banner = qs("reportar-banner");
-    banner.innerHTML = bannerHtml("ok","✅ Tus datos fueron capturados con éxito — folio "+folio+".");
-    toast("Guardado — folio "+folio);
-    setTimeout(function(){ if(banner.innerHTML.indexOf(folio)!==-1) banner.innerHTML = ""; }, 6000);
-  }
-
-  function clearFormFields(){
-    qs("f-folio").value = "";
-    MATERIALES.forEach(function(m){ qs("m-"+m.key).value = 0; });
-  }
-
-  function submitEntry(){
-    if(!configured){
-      qs("reportar-banner").innerHTML = bannerHtml("danger","Este reporte todavía no está configurado — falta la URL del Web App.");
-      return;
-    }
-    var tecnicoRaw = LOCKED_TECNICO || qs("f-tecnico").value;
-    var tecnico = normName(tecnicoRaw);
-    var folio = digitsOnly(qs("f-folio").value).replace(/^0+/,"");
-    var banner = qs("reportar-banner");
-    banner.innerHTML = "";
-    if(!tecnico){ banner.innerHTML = bannerHtml("warn","Escribe el nombre del técnico."); return; }
-    if(!folio){ banner.innerHTML = bannerHtml("warn","Escribe el folio de la orden."); return; }
-
-    var payload = Object.assign({action:"add", tecnico:tecnico, folio:folio}, readMatValues());
-
-    if(!LOCKED_TECNICO){
-      LOCKED_TECNICO = tecnico;
-      sessionStorage.setItem("ticket_tecnico", tecnico);
-    }
-
-    var btn = qs("btn-submit");
-    btn.disabled = true; btn.textContent = "Guardando…";
-    callApi(payload).then(function(result){
-      if(!result || result.error){ throw new Error((result && result.error) || "error"); }
-      clearFormFields();
-      showSavedBanner(folio);
-      return refreshList(true);
-    }).catch(function(){
-      toast("No se pudo guardar el folio "+folio+" — vuelve a intentar.", true);
-    }).finally(function(){
-      btn.disabled = false; btn.textContent = "Guardar reporte";
-    });
-  }
-
-  function wireTabs(){
+  function activarTab(nombre){
     document.querySelectorAll(".tab").forEach(function(t){
-      t.addEventListener("click", function(){
-        document.querySelectorAll(".tab").forEach(function(x){ x.classList.remove("active"); });
-        t.classList.add("active");
-        var target = t.dataset.tab;
-        qs("view-reportar").hidden = target!=="reportar";
-        qs("view-consolidado").hidden = target!=="consolidado";
-        if(target==="consolidado") refreshList(true);
-      });
+      t.classList.toggle("active", t.dataset.tab === nombre);
     });
+    qs("view-reportar").hidden    = nombre !== "reportar";
+    qs("view-mias").hidden        = nombre !== "mias";
+    qs("view-consolidado").hidden = nombre !== "consolidado";
+    VIENDO = nombre;
+    if(nombre !== "reportar") refreshList();
   }
+  var VIENDO = "reportar";
+
+  // -------------------------------------------------------------- boot ---
 
   function boot(){
     renderMatGrid();
     renderTecnicoChip();
-    renderConsolidado();
-    wireTabs();
-    qs("btn-submit").addEventListener("click", submitEntry);
+
+    document.querySelectorAll(".tab").forEach(function(t){
+      t.addEventListener("click", function(){ activarTab(t.dataset.tab); });
+    });
+    qs("btn-generar").addEventListener("click", generarReporte);
+    qs("btn-volver-editar").addEventListener("click", function(){ irAPaso(1); });
+    qs("btn-copiar-wa").addEventListener("click", function(){
+      copyText(qs("salida-mensaje").textContent, qs("btn-copiar-wa"));
+    });
+    qs("btn-siguiente").addEventListener("click", guardarOrdenYSeguir);
+    qs("btn-guardar-material").addEventListener("click", guardarMaterial);
 
     if(!configured){
-      qs("reportar-banner").innerHTML = bannerHtml("danger","Falta configurar la URL del Web App en este archivo (variable WEBAPP_URL). Ver INSTRUCCIONES.md.");
-      qs("btn-submit").disabled = true;
+      qs("banner-top").innerHTML = banner("danger",
+        "Falta configurar la URL del Web App (variable WEBAPP_URL). Ver INSTRUCCIONES.md.");
+      renderFormulario(); limpiarFormulario();
+      qs("btn-generar").disabled = true;
       return;
     }
 
-    refreshList();
-    setInterval(function(){ refreshList(true); }, POLL_MS);
+    // El índice completo (para los avisos de duplicado) se pide una sola vez.
+    refreshList(true).then(function(){
+      renderFormulario();
+      limpiarFormulario();
+    });
+
+    // Solo se refresca cuando hay algo que mirar: en la calle, con el
+    // formulario abierto, no tiene sentido gastar señal ni cuota.
+    setInterval(function(){
+      if(VIENDO !== "reportar" && !document.hidden) refreshList();
+    }, POLL_MS);
   }
 
-  if(document.readyState === "loading"){ document.addEventListener("DOMContentLoaded", boot); } else { boot(); }
+  if(document.readyState === "loading"){
+    document.addEventListener("DOMContentLoaded", boot);
+  } else boot();
 })();
 </script>
 </body>
