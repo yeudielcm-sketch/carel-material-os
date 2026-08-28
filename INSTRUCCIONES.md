@@ -80,7 +80,16 @@ https://yeudielcm-sketch.github.io/carel-material-os/?tec=MARVIN ALEXIS MARTINEZ
 ```
 
 Sin ese parámetro, el primer reporte les pide el nombre y queda recordado en el
-navegador mientras no cierren la pestaña. **Conviene repartir el enlace con
+navegador mientras no cierren la pestaña.
+
+**El enlace de quien arma el Excel es otro**, con `?admin=1`:
+
+```
+https://yeudielcm-sketch.github.io/carel-material-os/?admin=1
+```
+
+Solo ese enlace muestra la pestaña **Consolidado**, con los botones de copiado y
+el de archivar. Los técnicos no exportan nada, así que no la ven ni por error. **Conviene repartir el enlace con
 `?tec=`**: en el Excel de 2026 la misma persona aparece escrita de tres formas
 distintas (`MARVIN ALEXIS MARTINEZ`, `ALEXIS MARTINEZ`, `MARVIN ALEXIS MARTINEZ
 CALVO`), y eso parte el consolidado en tres bloques.

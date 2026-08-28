@@ -455,6 +455,10 @@
   var TECNICO = params.get("tec") ? normName(params.get("tec"))
               : (function(){ try{ return localStorage.getItem("carel_tecnico")||""; }catch(e){ return ""; } })();
 
+  // El consolidado es de quien arma el Excel, no de los técnicos: ellos no
+  // exportan nada. Solo aparece con ?admin=1 al final del enlace.
+  var ADMIN = params.get("admin") === "1";
+
   var configured = WEBAPP_URL && WEBAPP_URL.indexOf("PEGA_AQUI") === -1;
 
   // ------------------------------------------------------------ el mensaje ---
@@ -999,6 +1003,7 @@
   }
 
   function renderConsolidado(){
+    if(!ADMIN) return;
     var body = qs("consolidado-body");
     if(!STATE.entries.length){
       body.innerHTML = '<div class="empty">Aún no hay órdenes sin pegar.<br>' +
@@ -1116,6 +1121,7 @@
   // -------------------------------------------------------------- tabs ---
 
   function activarTab(nombre){
+    if(nombre === "consolidado" && !ADMIN) nombre = "reportar";
     document.querySelectorAll(".tab").forEach(function(t){
       t.classList.toggle("active", t.dataset.tab === nombre);
     });
@@ -1132,6 +1138,12 @@
   function boot(){
     renderMatGrid();
     renderTecnicoChip();
+
+    if(!ADMIN){
+      var tabCons = document.querySelector('[data-tab="consolidado"]');
+      if(tabCons) tabCons.hidden = true;
+      qs("view-consolidado").hidden = true;
+    }
 
     document.querySelectorAll(".tab").forEach(function(t){
       t.addEventListener("click", function(){ activarTab(t.dataset.tab); });
