@@ -346,6 +346,29 @@
     {g:"El trabajo", k:"vigencia",     lab:"VIGENCIA",          lista:true, mayus:true}
   ];
 
+  // El expediente de COPE es fijo por persona: no cambia de una orden a otra.
+  // Los alias están porque en el Excel de 2026 la misma persona aparece escrita
+  // de tres formas, y así el expediente sale bien la escriban como la escriban.
+  var TECNICOS = [
+    {nombre:"MARVIN ALEXIS MARTINEZ",    expediente:"00831901",
+     alias:["ALEXIS MARTINEZ", "MARVIN ALEXIS MARTINEZ CALVO"]},
+    {nombre:"CARLOS DANIEL BERMUDEZ",    expediente:"00917921", alias:[]},
+    {nombre:"JULIO CESAR LOPEZ SANCHEZ", expediente:"00746601", alias:[]}
+  ];
+
+  function fichaTecnico(nombre){
+    var n = normName(nombre);
+    if(!n) return null;
+    for(var i = 0; i < TECNICOS.length; i++){
+      var t = TECNICOS[i];
+      if(normName(t.nombre) === n) return t;
+      for(var j = 0; j < t.alias.length; j++){
+        if(normName(t.alias[j]) === n) return t;
+      }
+    }
+    return null;
+  }
+
   var MATERIALES = [
     {key:"argollas",  label:"ARGOLLAS",   col:"M", fijo:1},
     {key:"taquetes",  label:"TAQUETES",   col:"O", fijo:3},
@@ -681,14 +704,15 @@
    * ni cuando entra desde otro teléfono.
    */
   function ultimoDelTecnico(k){
+    // El expediente sale de la tabla, no del histórico: es un dato de la
+    // persona, no de la orden, y así aparece bien desde el primer folio y
+    // desde cualquier teléfono, sin haber capturado nada antes.
+    if(k === "expediente"){
+      var f = fichaTecnico(TECNICO);
+      if(f) return f.expediente;
+    }
     var mios = STATE.entries.filter(function(e){ return normName(e.tecnico) === TECNICO; });
     for(var i = mios.length - 1; i >= 0; i--){ if(mios[i][k]) return mios[i][k]; }
-    if(k === "expediente"){
-      for(var j = STATE.indice.length - 1; j >= 0; j--){
-        var r = STATE.indice[j];
-        if(normName(r[3]) === TECNICO && r[6]) return r[6];
-      }
-    }
     return "";
   }
 
@@ -727,8 +751,7 @@
   function todasConocidas(){
     var vistos = {}, out = [];
     STATE.indice.forEach(function(r){
-      var e = { folio:r[0], telefono:r[1], fecha:r[2], tecnico:r[3], nFibra:r[4],
-                id:r[5]||"", expediente:r[6]||"" };
+      var e = { folio:r[0], telefono:r[1], fecha:r[2], tecnico:r[3], nFibra:r[4], id:r[5]||"" };
       if(e.id) vistos[e.id] = true;
       out.push(e);
     });
@@ -833,7 +856,15 @@
   function generarReporte(){
     if(!TECNICO){
       TECNICO = normName(qs("f-tecnico") ? qs("f-tecnico").value : "");
-      if(TECNICO){ try{ localStorage.setItem("carel_tecnico", TECNICO); }catch(e){} renderTecnicoChip(); }
+      if(TECNICO){
+        try{ localStorage.setItem("carel_tecnico", TECNICO); }catch(e){}
+        renderTecnicoChip();
+        var ficha = fichaTecnico(TECNICO);
+        if(ficha && !leerCampo("expediente")){
+          ponerCampo("expediente", ficha.expediente);
+          pista("expediente", "Es el tuyo, no cambia. Tócalo solo si te lo cambiaron.");
+        }
+      }
     }
     var o = leerOrden();
     var faltan = validar(o);
@@ -954,8 +985,8 @@
       wrap.innerHTML = '<div class="tecnico-chip">Escribe tu nombre abajo para empezar.</div>';
       if(picker) picker.hidden = false;
       var dl = qs("tecnicos-list");
-      if(dl) dl.innerHTML = STATE.tecnicos.map(function(t){
-        return '<option value="'+esc(t)+'">'; }).join("");
+      if(dl) dl.innerHTML = TECNICOS.map(function(t){
+        return '<option value="'+esc(t.nombre)+'">'; }).join("");
     }
   }
 
