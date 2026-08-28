@@ -41,6 +41,16 @@ var CAMPOS_MATERIAL = {
   sincho: "Sincho", tensores: "Tensores", sujMarfil: "SujMarfil", ont: "Ont"
 };
 
+/**
+ * Columnas que van como número. TODAS las demás se escriben con formato de
+ * texto ("@") a propósito: si no, Sheets convierte "058876673" en 58876673 y
+ * el cero inicial del folio —que el mensaje de WhatsApp sí lleva— se pierde
+ * sin que nadie se entere. Lo mismo con el expediente ("00831901").
+ */
+var NUMERICAS = ["Timestamp", "NFibra", "Metraje",
+                 "Argollas", "Taquetes", "Roseta", "Sellos",
+                 "Sincho", "Tensores", "SujMarfil", "Ont"];
+
 // Campos que la app ofrece como lista de "más usados". La lista se calcula de
 // lo que ya hay en la hoja; estas semillas son solo el arranque, salidas de los
 // reportes reales de 2026 (TipoOS y Metraje) y del formato de WhatsApp.
@@ -117,6 +127,15 @@ function idx(nombre) {
   var i = COLS.indexOf(nombre);
   if (i < 0) throw new Error("Columna desconocida: " + nombre);
   return i;
+}
+
+/** Escribe una fila entera fijando antes el formato de cada celda. */
+function escribirFila(sh, numFila, valores) {
+  var rango = sh.getRange(numFila, 1, 1, COLS.length);
+  rango.setNumberFormats([COLS.map(function (n) {
+    return NUMERICAS.indexOf(n) >= 0 ? "General" : "@";
+  })]);
+  rango.setValues([valores]);
 }
 
 function leerTodo(sh) {
@@ -233,7 +252,7 @@ function addOrden(body) {
   fila[idx("MaterialOk")] = "";
   fila[idx("Copiada")] = "";
 
-  sh.appendRow(fila);
+  escribirFila(sh, sh.getLastRow() + 1, fila);
   return { ok: true, id: id, nFibra: nFibra, semana: semana };
 }
 
@@ -247,7 +266,7 @@ function saveMaterial(body) {
   var fila = values[i];
   for (var m in CAMPOS_MATERIAL) fila[idx(CAMPOS_MATERIAL[m])] = num(body[m]);
   fila[idx("MaterialOk")] = "SI";
-  sh.getRange(i + 2, 1, 1, COLS.length).setValues([fila]);
+  escribirFila(sh, i + 2, fila);
   return { ok: true, id: String(body.id) };
 }
 
@@ -270,7 +289,7 @@ function updateOrden(body) {
     fila[idx("NFibra")] = num(body.nFibra);
   }
   if (body.hasOwnProperty("fecha")) fila[idx("Semana")] = semanaDe(clean(body.fecha));
-  sh.getRange(i + 2, 1, 1, COLS.length).setValues([fila]);
+  escribirFila(sh, i + 2, fila);
   return { ok: true };
 }
 
