@@ -36,7 +36,11 @@ var COLS = [
   "Direccion", "Barrio", "Metraje", "Acometida", "Fecha", "Observaciones",
   "Autoriza", "Nip", "Vigencia", "RetiraModem",
   "Argollas", "Taquetes", "Roseta", "Sellos", "Sincho", "Tensores", "SujMarfil", "Ont",
-  "MaterialOk", "Copiada"
+  "MaterialOk", "Copiada",
+  // Va al final y no junto a Barrio, que es donde le tocaría por contenido:
+  // idx() mapea por posición, así que meterla en medio dejaría las órdenes ya
+  // guardadas leyéndose con todo corrido una columna.
+  "CelReferencia"
 ];
 
 // Campos de la orden: clave que usa la app -> columna de la hoja.
@@ -46,7 +50,8 @@ var CAMPOS_ORDEN = {
   expediente: "ExpedienteCope", serie: "Serie", modelo: "ModeloModem", cv: "CV",
   direccion: "Direccion", barrio: "Barrio", metraje: "Metraje", acometida: "Acometida",
   fecha: "Fecha", observaciones: "Observaciones", autoriza: "Autoriza",
-  nip: "Nip", vigencia: "Vigencia", retiraModem: "RetiraModem"
+  nip: "Nip", vigencia: "Vigencia", retiraModem: "RetiraModem",
+  celReferencia: "CelReferencia"
 };
 
 var CAMPOS_MATERIAL = {
@@ -81,6 +86,76 @@ var SEMILLAS = {
 var CON_LISTA = ["cope", "tipoOs", "distrito", "terminal", "puerto", "modelo",
                  "cv", "barrio", "metraje", "observaciones", "autoriza", "nip", "vigencia"];
 
+// --------------------------------------------------------------- técnicos ---
+
+var SHEET_TECNICOS = "Tecnicos";
+var COLS_TEC = ["Nombre", "Cope", "Expediente", "Alias"];
+
+/**
+ * El ORDEN DE LAS FILAS es el orden en que los técnicos salen en el Excel
+ * —CARLOS, MARVIN, JULIO—, que no es alfabético. Para reordenar, se arrastran
+ * las filas en la hoja. Los alias existen porque en el Excel de 2026 la misma
+ * persona aparecía escrita de tres formas.
+ */
+var TECNICOS_INICIALES = [
+  ["CARLOS DANIEL BERMUDEZ",    "COMITAN", "00917921", ""],
+  ["MARVIN ALEXIS MARTINEZ",    "COMITAN", "00831901", "ALEXIS MARTINEZ, MARVIN ALEXIS MARTINEZ CALVO"],
+  ["JULIO CESAR LOPEZ SANCHEZ", "COMITAN", "00746601", ""]
+];
+
+function getHojaTecnicos() {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var sh = ss.getSheetByName(SHEET_TECNICOS);
+  if (sh) return sh;
+  sh = ss.insertSheet(SHEET_TECNICOS);
+  sh.appendRow(COLS_TEC);
+  sh.setFrozenRows(1);
+  sh.getRange(1, 1, 1, COLS_TEC.length).setFontWeight("bold");
+  var r = sh.getRange(2, 1, TECNICOS_INICIALES.length, COLS_TEC.length);
+  r.setNumberFormat("@");        // el expediente lleva ceros a la izquierda
+  r.setValues(TECNICOS_INICIALES);
+  return sh;
+}
+
+function leerTecnicos() {
+  var sh = getHojaTecnicos();
+  var last = sh.getLastRow();
+  if (last < 2) return [];
+  var v = sh.getRange(2, 1, last - 1, COLS_TEC.length).getValues();
+  var out = [];
+  for (var i = 0; i < v.length; i++) {
+    var nombre = clean(v[i][0]);
+    if (!nombre) continue;
+    var alias = clean(v[i][3]);
+    out.push({
+      nombre: nombre,
+      cope: clean(v[i][1]),
+      expediente: clean(v[i][2]),
+      alias: alias ? alias.split(",").map(function (a) { return a.trim(); })
+                          .filter(function (a) { return a; }) : []
+    });
+  }
+  return out;
+}
+
+function addTecnico(body) {
+  var nombre = clean(body.nombre).toUpperCase();
+  if (!nombre) return { error: "sin_nombre" };
+  var cope = clean(body.cope).toUpperCase();
+  if (!cope) return { error: "sin_cope" };
+
+  var ya = leerTecnicos();
+  for (var i = 0; i < ya.length; i++) {
+    if (ya[i].nombre.toUpperCase() === nombre) return { error: "ya_existe" };
+  }
+  var sh = getHojaTecnicos();
+  var fila = sh.getLastRow() + 1;
+  var r = sh.getRange(fila, 1, 1, COLS_TEC.length);
+  r.setNumberFormat("@");
+  r.setValues([[nombre, cope, clean(body.expediente), clean(body.alias)]]);
+  return { ok: true, tecnicos: leerTecnicos() };
+}
+
 // ---------------------------------------------------------------- entrada ---
 
 function doGet(e) {
@@ -104,6 +179,7 @@ function doPost(e) {
       case "saveMaterial":  return respond(saveMaterial(body));
       case "updateOrden":   return respond(updateOrden(body));
       case "marcarCopiada": return respond(marcarCopiada(body));
+      case "addTecnico":    return respond(addTecnico(body));
       default:              return respond({ error: "unknown_action" });
     }
   } catch (err) {
@@ -207,7 +283,13 @@ function listEntries(full) {
     entries.push(filaAObjeto(r));
   }
 
-  var out = { entries: entries, tecnicos: Object.keys(tecs),
+  // Si algo falla leyendo los técnicos, la captura NO se cae: la app tiene su
+  // propia copia de respaldo.
+  var fichas = [];
+  try { fichas = leerTecnicos(); } catch (e) { fichas = []; }
+
+  var out = { entries: entries, tecnicos: fichas,
+              tecnicosConDatos: Object.keys(tecs),
               catalogos: catalogos(cuenta) };
   if (full) out.indice = indice;
   return out;

@@ -321,6 +321,32 @@
     Los botones chicos sirven si prefieres columna por columna.
   </div>
   <div id="consolidado-body"></div>
+
+  <div class="ticket" id="alta-tecnico" style="max-width:560px;margin-top:26px">
+    <div class="ticket__band"></div>
+    <div class="ticket__head"><h2>Los t&eacute;cnicos</h2></div>
+    <div class="ticket__body">
+      <div id="lista-tecnicos"></div>
+      <div id="alta-aviso"></div>
+      <fieldset class="grupo"><legend>Dar de alta a uno nuevo</legend><div class="campos">
+        <div class="campo ancho"><label for="t-nombre">Nombre completo <span class="req">*</span></label>
+          <input type="text" id="t-nombre" autocomplete="off" placeholder="Como debe salir en el Excel">
+          <div class="pista">Se guarda en may&uacute;sculas y sin acentos.</div></div>
+        <div class="campo"><label for="t-cope">COPE <span class="req">*</span></label>
+          <input type="text" id="t-cope" autocomplete="off" placeholder="COMITAN"></div>
+        <div class="campo"><label for="t-exp">Expediente de COPE</label>
+          <input type="text" id="t-exp" class="mono" inputmode="numeric" autocomplete="off"></div>
+        <div class="campo ancho"><label for="t-alias">Otras formas en que se escribe su nombre</label>
+          <input type="text" id="t-alias" autocomplete="off" placeholder="Opcional, separadas por coma">
+          <div class="pista">Sirve para que sus &oacute;rdenes viejas se junten con las nuevas.</div></div>
+      </div></fieldset>
+      <button class="big" id="btn-alta" type="button">Agregar t&eacute;cnico</button>
+      <div id="alta-enlace"></div>
+      <p class="note">El orden en que aparecen aqu&iacute; es el orden en que salen en el Excel.
+      Para cambiarlo, o para corregir a alguien, se arrastran las filas en la pesta&ntilde;a
+      <b>Tecnicos</b> de la hoja de c&aacute;lculo.</p>
+    </div>
+  </div>
 </main>
 
 <div id="escaner" hidden>
@@ -373,6 +399,7 @@
     {g:"El cliente", k:"expediente",   lab:"EXPEDIENTE DE COPE", numerico:true, recuerda:true, fijoDelTecnico:true},
     {g:"El cliente", k:"direccion",    lab:"DIRECCION",         mayus:true, ancho:true},
     {g:"El cliente", k:"barrio",       lab:"BARRIO",            lista:true, recuerda:true, mayus:true, ancho:true},
+    {g:"El cliente", k:"celReferencia",lab:"CEL DE REFERENCIA", numerico:true, ancho:true},
 
     {g:"El equipo",  k:"serie",        lab:"SERIE",             req:true, mayus:true, escaneable:true},
     {g:"El equipo",  k:"modelo",       lab:"MODELO DE MODEM",   lista:true, mayus:true},
@@ -397,12 +424,16 @@
   // El COPE es la central, o sea la plaza. Sirve de ciudad: el corte de cada
   // plaza sale por separado. Para dar de alta un técnico nuevo se añade aquí su
   // renglón y se le manda su enlace; no hay que tocar nada más.
-  var TECNICOS = [
+  // La lista de verdad vive en la pestaña "Tecnicos" de la hoja y llega con
+  // cada listado. Esta copia es el respaldo: si la red falla o el guardado no
+  // la devuelve, el técnico sigue capturando con su nombre y su expediente.
+  var TECNICOS_RESPALDO = [
     {nombre:"CARLOS DANIEL BERMUDEZ",    cope:"COMITAN", expediente:"00917921", alias:[]},
     {nombre:"MARVIN ALEXIS MARTINEZ",    cope:"COMITAN", expediente:"00831901",
      alias:["ALEXIS MARTINEZ", "MARVIN ALEXIS MARTINEZ CALVO"]},
     {nombre:"JULIO CESAR LOPEZ SANCHEZ", cope:"COMITAN", expediente:"00746601", alias:[]}
   ];
+  var TECNICOS = TECNICOS_RESPALDO.slice();
 
   /**
    * El nombre que se escribe siempre, venga como venga en el enlace. Sin esto
@@ -588,6 +619,10 @@
     L.push("*CV* " + o.cv + " ");
     L.push("*DIRECCION:* " + o.direccion);
     L.push("*BARRIO:* " + o.barrio);
+    // En el mensaje que mandan hoy a mano, este campo sale sin dos puntos y con
+    // el número en el renglón de abajo. Las dos cosas son desliz del técnico, y
+    // evitarlas es justo para lo que existe la app: aquí sale como los demás.
+    L.push("*CEL DE REFERENCIA:* " + o.celReferencia);
     L.push("*METRAJE:*  " + o.metraje + " metros " + o.acometida);
     L.push("*TECNICO* " + nombreCanonico(o.tecnico));
     L.push("*FECHA* " + o.fecha);
@@ -627,6 +662,11 @@
       STATE.tecnicos = d.tecnicos || [];
       STATE.catalogos = d.catalogos || {};
       if(d.indice) STATE.indice = d.indice;
+      // El guardado viejo mandaba nombres sueltos; el nuevo manda fichas.
+      if(Array.isArray(d.tecnicos) && d.tecnicos.length && d.tecnicos[0] && d.tecnicos[0].nombre){
+        TECNICOS = d.tecnicos;
+        TECNICO = nombreCanonico(TECNICO);
+      }
       renderTodo();
       // Solo se quita el aviso de conexión. El "Capturado con éxito" tiene que
       // sobrevivir al refresco: si no, el técnico guarda y no ve nada.
@@ -1198,7 +1238,8 @@
       return '<div class="orden"><div class="datos">' +
         '<div class="l1">' + e.nFibra + 'FIBRA · folio ' + esc(e.folio) + ' ' + falta + '</div>' +
         '<div class="l2">' + esc(e.cliente || "—") + ' · ' + esc(e.fecha) +
-        ' · ' + esc(e.metraje) + ' m ' + esc(e.acometida) + '</div></div>' +
+        ' · ' + esc(e.metraje) + ' m ' + esc(e.acometida) +
+        (e.celReferencia ? ' · cel ref. ' + esc(e.celReferencia) : '') + '</div></div>' +
         '<div class="acciones">' +
         '<button class="mini" data-wa="'+e.id+'">Copiar WhatsApp</button>' +
         '<button class="mini" data-edit="'+e.id+'">Corregir</button>' +
@@ -1302,7 +1343,9 @@
     var nombre = nombreDelCorte(filas);
     // Con varias plazas, dos cortes de la misma semana chocarían de nombre.
     if(copes.length > 1 && COPE_VISTA) nombre += " " + COPE_VISTA;
-    var selector = copes.length > 1
+    // Siempre visible, aunque hoy solo haya una plaza: el corte es POR plaza y
+    // eso tiene que verse antes de copiar, no descubrirse el día que haya dos.
+    var selector = copes.length
       ? '<div style="margin-bottom:10px">Plaza: <select id="sel-cope">' +
           copes.map(function(c){
             return '<option value="'+esc(c)+'"'+(c === COPE_VISTA ? ' selected' : '')+'>'+
@@ -1325,8 +1368,68 @@
       '</div>';
   }
 
+  function enlaceDe(nombre){
+    return location.origin + location.pathname + "?tec=" + encodeURIComponent(nombre);
+  }
+
+  function renderTecnicos(){
+    if(!ADMIN) return;
+    var cont = qs("lista-tecnicos");
+    if(!cont) return;
+    cont.innerHTML = TECNICOS.map(function(t, i){
+      return '<div class="orden"><div class="datos">' +
+        '<div class="l1">'+(i+1)+' &middot; '+esc(t.nombre)+'</div>' +
+        '<div class="l2">'+esc(t.cope || "sin plaza")+
+          (t.expediente ? ' &middot; expediente '+esc(t.expediente) : ' &middot; sin expediente')+'</div>' +
+        '</div><div class="acciones">' +
+        '<button class="mini" data-enlace="'+esc(t.nombre)+'">Copiar su enlace</button>' +
+        '</div></div>';
+    }).join("") || '<div class="empty">Todavía no hay técnicos dados de alta.</div>';
+    cont.querySelectorAll("[data-enlace]").forEach(function(b){
+      b.addEventListener("click", function(){ copyText(enlaceDe(b.dataset.enlace), b); });
+    });
+  }
+
+  function altaTecnico(){
+    var nombre = normName(qs("t-nombre").value);
+    var cope   = normName(qs("t-cope").value);
+    var aviso  = qs("alta-aviso");
+    aviso.innerHTML = "";
+    qs("alta-enlace").innerHTML = "";
+    if(!nombre || !cope){
+      aviso.innerHTML = banner("warn", "El nombre y el COPE son obligatorios.");
+      return;
+    }
+    var btn = qs("btn-alta");
+    btn.disabled = true; btn.textContent = "Agregando…";
+    callApi({ action:"addTecnico", nombre:nombre, cope:cope,
+              expediente:digitsOnly(qs("t-exp").value),
+              alias:normName(qs("t-alias").value) })
+      .then(function(r){
+        if(Array.isArray(r.tecnicos) && r.tecnicos.length) TECNICOS = r.tecnicos;
+        ["t-nombre","t-cope","t-exp","t-alias"].forEach(function(id){ qs(id).value = ""; });
+        aviso.innerHTML = banner("ok", "✅ " + nombre + " ya puede capturar.");
+        qs("alta-enlace").innerHTML =
+          '<div class="steps" style="margin-top:14px">Su enlace, listo para mandarle:<br>' +
+          '<code style="word-break:break-all">'+esc(enlaceDe(nombre))+'</code>' +
+          '<br><button class="mini" data-enlace="'+esc(nombre)+'" style="margin-top:8px">Copiar</button></div>';
+        qs("alta-enlace").querySelector("[data-enlace]").addEventListener("click", function(ev){
+          copyText(enlaceDe(nombre), ev.currentTarget);
+        });
+        renderTecnicos();
+        return refreshList();
+      })
+      .catch(function(err){
+        aviso.innerHTML = banner("danger", err.message === "ya_existe"
+          ? "Ya hay un técnico con ese nombre."
+          : "No se pudo agregar — vuelve a intentar.");
+      })
+      .finally(function(){ btn.disabled = false; btn.textContent = "Agregar técnico"; });
+  }
+
   function renderConsolidado(){
     if(!ADMIN) return;
+    renderTecnicos();
     var body = qs("consolidado-body");
     if(!STATE.entries.length){
       body.innerHTML = '<div class="empty">Aún no hay órdenes sin pegar.<br>' +
@@ -1498,6 +1601,8 @@
       var tabCons = document.querySelector('[data-tab="consolidado"]');
       if(tabCons) tabCons.hidden = true;
       qs("view-consolidado").hidden = true;
+      var alta = qs("alta-tecnico");
+      if(alta) alta.hidden = true;
     }
     if(SOLO_ADMIN){
       ["reportar","mias"].forEach(function(n){
@@ -1521,6 +1626,7 @@
     });
     qs("btn-siguiente").addEventListener("click", guardarOrdenYSeguir);
     qs("btn-guardar-material").addEventListener("click", guardarMaterial);
+    if(qs("btn-alta")) qs("btn-alta").addEventListener("click", altaTecnico);
     qs("escaner-cerrar").addEventListener("click", cerrarEscaner);
     qs("escaner-usar").addEventListener("click", usarLoEscaneado);
     qs("escaner-seguir").addEventListener("click", function(){
