@@ -144,7 +144,7 @@ def diagrama_corte():
     cw = (ANCHO - 3 * 16) / 4.0
     cajas = [
         ("Hoja «Reportes»", ["lo que aún no", "se ha pegado"], AGSUAVE, AGUA),
-        ("Administración", ["?admin=1", "un solo botón"], ACSUAVE, ACENTO),
+        ("Administración", ["?admin=Supervisor", "un solo botón"], ACSUAVE, ACENTO),
         ("Excel del corte", ["se pega en A2 de", "MAT UTILIZADO"], BLANCO, LINEA),
         ("Archivo guardado", ["en MATERIALES", "DE FIBRA"], BLANCO, LINEA),
     ]

@@ -82,10 +82,10 @@ https://yeudielcm-sketch.github.io/carel-material-os/?tec=MARVIN ALEXIS MARTINEZ
 Sin ese parámetro, el primer reporte les pide el nombre y queda recordado en el
 navegador mientras no cierren la pestaña.
 
-**El enlace de quien arma el Excel es otro**, con `?admin=1`:
+**El enlace de quien arma el Excel es otro**, con `?admin=Supervisor`:
 
 ```
-https://yeudielcm-sketch.github.io/carel-material-os/?admin=1
+https://yeudielcm-sketch.github.io/carel-material-os/?admin=Supervisor
 ```
 
 Solo ese enlace muestra la pestaña **Consolidado**, con los botones de copiado y

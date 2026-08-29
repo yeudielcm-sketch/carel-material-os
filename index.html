@@ -585,8 +585,11 @@
               || (function(){ try{ return localStorage.getItem("carel_tecnico")||""; }catch(e){ return ""; } })());
 
   // El consolidado es de quien arma el Excel, no de los técnicos: ellos no
-  // exportan nada. Solo aparece con ?admin=1 al final del enlace.
-  var ADMIN = params.get("admin") === "1";
+  // exportan nada. Solo aparece con ?admin=Supervisor al final del enlace.
+  // No es seguridad —la palabra viaja en la URL y está en este archivo—, pero
+  // deja de encontrarse por casualidad, que era lo que pasaba con "1".
+  // Sin distinguir mayúsculas, para que no falle por cómo lo teclee el teléfono.
+  var ADMIN = String(params.get("admin") || "").toLowerCase() === "supervisor";
   // Quien entra como administrador y no se identifica como técnico no captura
   // órdenes: solo copia y archiva. Se le deja únicamente el Consolidado.
   var SOLO_ADMIN = ADMIN && !params.get("tec");
