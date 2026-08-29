@@ -314,8 +314,9 @@
 <main class="view" id="view-consolidado" hidden>
   <div class="steps">
     <b>C&oacute;mo pasar esto al Excel</b> (hoja <code>MAT UTILIZADO</code>): abre el archivo del corte
-    anterior, borra las filas viejas, y por cada t&eacute;cnico haz <b>un solo pegado</b> en la
-    celda <code>A</code> de la fila que te dice su bloque. Despu&eacute;s
+    anterior, borra las filas viejas y haz <b>un solo pegado</b> en la celda
+    <code>A2</code> con el bot&oacute;n de arriba &mdash; sale ya ordenado por fecha, que es como
+    quedan tus archivos. Despu&eacute;s
     <b>gu&aacute;rdalo con el nombre nuevo</b> y archiva el bloque aqu&iacute;.
     Los botones chicos sirven si prefieres columna por columna.
   </div>
@@ -1226,6 +1227,16 @@
     return "REPORTE DE MATERIAL FIBRA S"+semanaISO(d1)+" "+tramo+" "+d2.getFullYear();
   }
 
+  /** Todo el corte en el orden en que queda el Excel: por fecha, como lo dejaba
+   *  el macro viejo y como están los archivos de 2026. */
+  function filasDelCorte(){
+    return STATE.entries.slice().sort(function(a,b){
+      var fa = fechaDe(a.fecha), fb = fechaDe(b.fecha);
+      if(fa && fb && fa - fb !== 0) return fa - fb;
+      return (a.nFibra || 0) - (b.nFibra || 0);
+    });
+  }
+
   function resumenDelCorte(orden, mapa){
     var total = STATE.entries.length;
     var sinMaterial = STATE.entries.filter(function(e){ return !e.materialOk; }).length;
@@ -1238,6 +1249,8 @@
       (total === 1 ? ' orden.' : ' órdenes.')+'</b> ' +
       'En el Excel ocupan de la fila <b>2</b> a la <b>'+(total+1)+'</b> — ' +
       'borra hasta ahí antes de pegar, por si el corte anterior era más largo.' + aviso +
+      '<br><br><button class="copybtn destacado" data-corte="1" style="display:inline-flex">' +
+        'Copiar TODO el corte <span class="badge">A:AD · '+total+' filas</span></button>' +
       '<br><br>Nombre del archivo:<br><code>'+esc(nombre)+'.xlsx</code>' +
       '<button class="mini" data-nombre="'+esc(nombre)+'" style="margin-left:8px">copiar</button>' +
       '</div>';
@@ -1327,6 +1340,9 @@
 
   function cablearConsolidado(){
     var body = qs("consolidado-body");
+    body.querySelectorAll("[data-corte]").forEach(function(b){
+      b.addEventListener("click", function(){ copyText(tsv(filasDelCorte(), BLOQUE_AD, 0), b); });
+    });
     body.querySelectorAll("[data-todo]").forEach(function(b){
       b.addEventListener("click", function(){
         copyText(tsv(filasDe(b.dataset.tec), BLOQUE_AD, parseInt(b.dataset.desde,10)||0), b);
