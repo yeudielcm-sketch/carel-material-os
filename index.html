@@ -553,6 +553,9 @@
   // El consolidado es de quien arma el Excel, no de los técnicos: ellos no
   // exportan nada. Solo aparece con ?admin=1 al final del enlace.
   var ADMIN = params.get("admin") === "1";
+  // Quien entra como administrador y no se identifica como técnico no captura
+  // órdenes: solo copia y archiva. Se le deja únicamente el Consolidado.
+  var SOLO_ADMIN = ADMIN && !params.get("tec");
 
   var configured = WEBAPP_URL && WEBAPP_URL.indexOf("PEGA_AQUI") === -1;
 
@@ -1028,6 +1031,7 @@
   }
 
   function generarReporte(){
+    if(SOLO_ADMIN) return;
     if(!TECNICO){
       TECNICO = nombreCanonico(qs("f-tecnico") ? qs("f-tecnico").value : "");
       if(TECNICO){
@@ -1143,6 +1147,12 @@
   function renderTecnicoChip(){
     var wrap = qs("tecnico-chip-wrap");
     var picker = qs("tecnico-picker");
+    if(SOLO_ADMIN){
+      wrap.innerHTML = '<div class="tecnico-chip">Vista de administraci&oacute;n &mdash; ' +
+        'aqu&iacute; solo se copia al Excel y se archiva.</div>';
+      if(picker) picker.hidden = true;
+      return;
+    }
     if(TECNICO){
       wrap.innerHTML = '<div class="tecnico-chip">Técnico: <b>'+esc(TECNICO)+
         '</b><a class="change" href="#" id="change-tec">cambiar</a></div>';
@@ -1431,6 +1441,7 @@
 
   function activarTab(nombre){
     if(nombre === "consolidado" && !ADMIN) nombre = "reportar";
+    if(SOLO_ADMIN) nombre = "consolidado";
     document.querySelectorAll(".tab").forEach(function(t){
       t.classList.toggle("active", t.dataset.tab === nombre);
     });
@@ -1452,6 +1463,17 @@
       var tabCons = document.querySelector('[data-tab="consolidado"]');
       if(tabCons) tabCons.hidden = true;
       qs("view-consolidado").hidden = true;
+    }
+    if(SOLO_ADMIN){
+      ["reportar","mias"].forEach(function(n){
+        var t = document.querySelector('[data-tab="'+n+'"]');
+        if(t) t.hidden = true;
+      });
+      document.querySelector(".tabs").hidden = true;   // una sola vista: sin pestañas
+      qs("view-reportar").hidden = true;
+      qs("view-mias").hidden = true;
+      qs("view-consolidado").hidden = false;
+      VIENDO = "consolidado";
     }
 
     document.querySelectorAll(".tab").forEach(function(t){
@@ -1482,6 +1504,7 @@
 
     // El índice completo (para los avisos de duplicado) se pide una sola vez.
     refreshList(true).then(function(){
+      if(SOLO_ADMIN) return;          // el administrador no captura: no hay formulario
       renderFormulario();
       limpiarFormulario();
     });
