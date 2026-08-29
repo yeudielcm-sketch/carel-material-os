@@ -314,8 +314,8 @@
 <main class="view" id="view-consolidado" hidden>
   <div class="steps">
     <b>C&oacute;mo pasar esto al Excel</b> (hoja <code>MAT UTILIZADO</code>): abre el archivo del corte
-    anterior, borra las filas viejas, y por cada t&eacute;cnico pega tres veces en la fila que te
-    dice su bloque &mdash; <code>A</code>, <code>M</code> y <code>AD</code>. Despu&eacute;s
+    anterior, borra las filas viejas, y por cada t&eacute;cnico haz <b>un solo pegado</b> en la
+    celda <code>A</code> de la fila que te dice su bloque. Despu&eacute;s
     <b>gu&aacute;rdalo con el nombre nuevo</b> y archiva el bloque aqu&iacute;.
     Los botones chicos sirven si prefieres columna por columna.
   </div>
@@ -423,6 +423,16 @@
 
   // Bloque M:Z para el Excel. Las vacías son columnas que en 2026 nunca se
   // usaron (SUJET. ACOM., MUELA, SINCHO G., CINTA, CABLE MARFIL, CAJA EXC.).
+  // Fila completa de MAT UTILIZADO, de la A a la AD: 30 columnas, con vacías
+  // donde el Excel tiene material que no se usa desde hace años. Un solo pegado
+  // en la celda A y la fila queda puesta entera.
+  var BLOQUE_AD = ["__num__","folioExcel","telefono","fecha","tipoOs","tecnico","serie",
+                   "","","","","",                         // H:L  FIB. 25 a 125
+                   "argollas","","taquetes","","roseta","sellos","sincho","","",
+                   "tensores","","sujMarfil","","ont",      // M:Z
+                   "","","",                                // AA:AC
+                   "metraje"];                              // AD
+
   var BLOQUE_MZ = ["argollas","","taquetes","","roseta","sellos","sincho","","",
                    "tensores","","sujMarfil","","ont"];
   // Arranca en A: la columna del consecutivo la llenaba el macro viejo, y si
@@ -1279,6 +1289,12 @@
         '</tr>';
     }).join("");
 
+    var porPartes =
+      '<button class="copybtn" data-ag="1" data-tec="'+esc(nombre)+'" data-desde="'+desde+
+        '">A:G</button>' +
+      '<button class="copybtn" data-mz="1" data-tec="'+esc(nombre)+'">M:Z</button>' +
+      '<button class="copybtn" data-ad="1" data-tec="'+esc(nombre)+'">AD</button>';
+
     var sueltos = GRUPOS_SUELTOS.map(function(g){
       return '<button class="copybtn" data-cols="'+g.keys.join(",")+'" data-tec="'+esc(nombre)+'">' +
         g.label+' <span class="badge">'+g.badge+'</span></button>'; }).join("");
@@ -1289,14 +1305,11 @@
       '<div class="tablewrap"><table><thead><tr><th>#</th><th>Folio</th><th>Fecha</th>' +
       '<th>Metraje<small>AD</small></th>'+cabMat+'</tr></thead><tbody>'+cuerpo+'</tbody></table></div>' +
       '<div class="copyrow">' +
-        '<button class="copybtn destacado" data-ag="1" data-tec="'+esc(nombre)+'" ' +
-          'data-desde="'+desde+'">Pegar en A <span class="badge">A:G</span></button>' +
-        '<button class="copybtn destacado" data-mz="1" data-tec="'+esc(nombre)+'">' +
-          'Pegar en M <span class="badge">M:Z</span></button>' +
-        '<button class="copybtn destacado" data-ad="1" data-tec="'+esc(nombre)+'">' +
-          'Pegar en AD <span class="badge">AD</span></button>' +
+        '<button class="copybtn destacado" data-todo="1" data-tec="'+esc(nombre)+'" ' +
+          'data-desde="'+desde+'">Copiar la fila completa <span class="badge">A:AD</span>' +
+          '</button>' +
       '</div>' +
-      '<div class="copyrow" style="padding-top:0">'+sueltos+'</div>' +
+      '<div class="copyrow" style="padding-top:0">'+porPartes+sueltos+'</div>' +
       '<div class="footrow"><button class="mini" data-copiado="'+esc(nombre)+'">' +
         'Ya lo pegué — archivar este bloque</button></div></div>';
   }
@@ -1314,6 +1327,11 @@
 
   function cablearConsolidado(){
     var body = qs("consolidado-body");
+    body.querySelectorAll("[data-todo]").forEach(function(b){
+      b.addEventListener("click", function(){
+        copyText(tsv(filasDe(b.dataset.tec), BLOQUE_AD, parseInt(b.dataset.desde,10)||0), b);
+      });
+    });
     body.querySelectorAll("[data-ag]").forEach(function(b){
       b.addEventListener("click", function(){
         copyText(tsv(filasDe(b.dataset.tec), BLOQUE_AG, parseInt(b.dataset.desde,10)||0), b);
