@@ -1,0 +1,5 @@
+# git estaba tratando el PDF como texto y le habria cambiado los saltos de
+# linea al hacer checkout, dejandolo ilegible.
+*.pdf binary
+*.png binary
+*.xlsx binary
