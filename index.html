@@ -401,6 +401,16 @@
     {nombre:"JULIO CESAR LOPEZ SANCHEZ", expediente:"00746601", alias:[]}
   ];
 
+  /**
+   * El nombre que se escribe siempre, venga como venga en el enlace. Sin esto
+   * la misma persona acaba en el Excel de tres formas distintas, que es lo que
+   * pasó en 2026 con MARVIN ALEXIS MARTINEZ.
+   */
+  function nombreCanonico(nombre){
+    var f = fichaTecnico(nombre);
+    return f ? f.nombre : normName(nombre);
+  }
+
   function ordenTecnico(nombre){
     var f = fichaTecnico(nombre);
     return f ? TECNICOS.indexOf(f) : 99;   // el que no esté en la lista, al final
@@ -537,8 +547,8 @@
   var ORDEN_ACTUAL = null;
 
   var params = new URLSearchParams(location.search);
-  var TECNICO = params.get("tec") ? normName(params.get("tec"))
-              : (function(){ try{ return localStorage.getItem("carel_tecnico")||""; }catch(e){ return ""; } })();
+  var TECNICO = nombreCanonico(params.get("tec")
+              || (function(){ try{ return localStorage.getItem("carel_tecnico")||""; }catch(e){ return ""; } })());
 
   // El consolidado es de quien arma el Excel, no de los técnicos: ellos no
   // exportan nada. Solo aparece con ?admin=1 al final del enlace.
@@ -571,7 +581,7 @@
     L.push("*DIRECCION:* " + o.direccion);
     L.push("*BARRIO:* " + o.barrio);
     L.push("*METRAJE:*  " + o.metraje + " metros " + o.acometida);
-    L.push("*TECNICO* " + o.tecnico);
+    L.push("*TECNICO* " + nombreCanonico(o.tecnico));
     L.push("*FECHA* " + o.fecha);
     L.push("*OBSERVACIONES:* " + o.observaciones + " ");
     L.push("*AUTORIZA*  " + o.autoriza);
@@ -875,7 +885,7 @@
       var f = fichaTecnico(TECNICO);
       if(f) return f.expediente;
     }
-    var mios = STATE.entries.filter(function(e){ return normName(e.tecnico) === TECNICO; });
+    var mios = STATE.entries.filter(function(e){ return nombreCanonico(e.tecnico) === TECNICO; });
     for(var i = mios.length - 1; i >= 0; i--){ if(mios[i][k]) return mios[i][k]; }
     return "";
   }
@@ -899,7 +909,7 @@
   function siguienteNFibra(){
     var semana = lunesDe(hoyDDMMYYYY()), max = 0;
     todasConocidas().forEach(function(e){
-      if(normName(e.tecnico) !== TECNICO) return;
+      if(nombreCanonico(e.tecnico) !== TECNICO) return;
       if(lunesDe(e.fecha) !== semana) return;
       if(e.nFibra > max) max = e.nFibra;
     });
@@ -1019,7 +1029,7 @@
 
   function generarReporte(){
     if(!TECNICO){
-      TECNICO = normName(qs("f-tecnico") ? qs("f-tecnico").value : "");
+      TECNICO = nombreCanonico(qs("f-tecnico") ? qs("f-tecnico").value : "");
       if(TECNICO){
         try{ localStorage.setItem("carel_tecnico", TECNICO); }catch(e){}
         renderTecnicoChip();
@@ -1110,7 +1120,7 @@
   function editarOrden(id){
     var e = STATE.entries.filter(function(x){ return x.id === id; })[0];
     if(!e) return;
-    if(normName(e.tecnico) !== TECNICO){ toast("Esa orden no es tuya.", true); return; }
+    if(nombreCanonico(e.tecnico) !== TECNICO){ toast("Esa orden no es tuya.", true); return; }
     EDITANDO = id;
     ORDEN_ACTUAL = null;
     qs("f-nfibra").value = e.nFibra || 1;
@@ -1155,7 +1165,7 @@
   }
 
   function mias(){
-    return STATE.entries.filter(function(e){ return normName(e.tecnico) === TECNICO; });
+    return STATE.entries.filter(function(e){ return nombreCanonico(e.tecnico) === TECNICO; });
   }
 
   function renderMias(){
@@ -1193,6 +1203,7 @@
   function valorParaExcel(e, clave){
     if(clave === "") return "";
     if(clave === "folioExcel") return sinCeros(e.folio);
+    if(clave === "tecnico") return nombreCanonico(e.tecnico);
     if(e[clave] === undefined) return "";
     return e[clave];
   }
@@ -1284,8 +1295,9 @@
     }
     var orden = [], mapa = {};
     filasDelCorte().forEach(function(e){
-      if(!mapa[e.tecnico]){ mapa[e.tecnico] = []; orden.push(e.tecnico); }
-      mapa[e.tecnico].push(e);
+      var t = nombreCanonico(e.tecnico);
+      if(!mapa[t]){ mapa[t] = []; orden.push(t); }
+      mapa[t].push(e);
     });
     var desde = 0;
     var bloques = orden.map(function(t){
@@ -1346,7 +1358,7 @@
   }
 
   function filasDe(tec){
-    return STATE.entries.filter(function(e){ return e.tecnico === tec; });
+    return filasDelCorte().filter(function(e){ return nombreCanonico(e.tecnico) === tec; });
   }
   function tsv(filas, claves, desde){
     return filas.map(function(e, i){
