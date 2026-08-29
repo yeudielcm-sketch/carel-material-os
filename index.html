@@ -315,8 +315,8 @@
   <div class="steps">
     <b>C&oacute;mo pasar esto al Excel</b> (hoja <code>MAT UTILIZADO</code>): abre el archivo del corte
     anterior, borra las filas viejas y haz <b>un solo pegado</b> en la celda
-    <code>A2</code> con el bot&oacute;n de arriba &mdash; sale ya ordenado por fecha, que es como
-    quedan tus archivos. Despu&eacute;s
+    <code>A2</code> con el bot&oacute;n de arriba &mdash; sale ordenado <b>por t&eacute;cnico y,
+    dentro de cada uno, por fecha</b>, como estaban tus archivos antes. Despu&eacute;s
     <b>gu&aacute;rdalo con el nombre nuevo</b> y archiva el bloque aqu&iacute;.
     Los botones chicos sirven si prefieres columna por columna.
   </div>
@@ -391,12 +391,20 @@
   // El expediente de COPE es fijo por persona: no cambia de una orden a otra.
   // Los alias están porque en el Excel de 2026 la misma persona aparece escrita
   // de tres formas, y así el expediente sale bien la escriban como la escriban.
+  // OJO: el orden de esta lista es el orden en que van los técnicos en el
+  // Excel. Sale de los archivos de 2026: CARLOS > MARVIN > JULIO en 52 de los
+  // 60 que están agrupados. No es alfabético, así que no lo reordenes.
   var TECNICOS = [
+    {nombre:"CARLOS DANIEL BERMUDEZ",    expediente:"00917921", alias:[]},
     {nombre:"MARVIN ALEXIS MARTINEZ",    expediente:"00831901",
      alias:["ALEXIS MARTINEZ", "MARVIN ALEXIS MARTINEZ CALVO"]},
-    {nombre:"CARLOS DANIEL BERMUDEZ",    expediente:"00917921", alias:[]},
     {nombre:"JULIO CESAR LOPEZ SANCHEZ", expediente:"00746601", alias:[]}
   ];
+
+  function ordenTecnico(nombre){
+    var f = fichaTecnico(nombre);
+    return f ? TECNICOS.indexOf(f) : 99;   // el que no esté en la lista, al final
+  }
 
   function fichaTecnico(nombre){
     var n = normName(nombre);
@@ -1227,10 +1235,19 @@
     return "REPORTE DE MATERIAL FIBRA S"+semanaISO(d1)+" "+tramo+" "+d2.getFullYear();
   }
 
-  /** Todo el corte en el orden en que queda el Excel: por fecha, como lo dejaba
-   *  el macro viejo y como están los archivos de 2026. */
+  /**
+   * El orden del Excel: **por técnico, y dentro de cada uno por fecha
+   * creciente**. Así estuvieron 60 de los 68 archivos de 2026; se mezcló a
+   * partir de la S17 y Yeudiel pidió volver a lo de antes.
+   */
   function filasDelCorte(){
     return STATE.entries.slice().sort(function(a,b){
+      var oa = ordenTecnico(a.tecnico), ob = ordenTecnico(b.tecnico);
+      if(oa !== ob) return oa - ob;
+      if(oa === 99){
+        var porNombre = String(a.tecnico).localeCompare(String(b.tecnico));
+        if(porNombre) return porNombre;
+      }
       var fa = fechaDe(a.fecha), fb = fechaDe(b.fecha);
       if(fa && fb && fa - fb !== 0) return fa - fb;
       return (a.nFibra || 0) - (b.nFibra || 0);
@@ -1266,7 +1283,7 @@
       return;
     }
     var orden = [], mapa = {};
-    STATE.entries.forEach(function(e){
+    filasDelCorte().forEach(function(e){
       if(!mapa[e.tecnico]){ mapa[e.tecnico] = []; orden.push(e.tecnico); }
       mapa[e.tecnico].push(e);
     });
