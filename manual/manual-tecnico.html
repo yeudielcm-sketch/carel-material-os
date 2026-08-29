@@ -1,0 +1,638 @@
+<title>Manual del t&eacute;cnico</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@600;700;800&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+<style>
+  /* La paleta y las tipografías son las mismas de la app, a propósito: quien
+     lea el manual tiene que reconocer la pantalla que está usando. */
+  :root{
+    --ground:#f5f6ee; --surface:#ffffff; --surface-2:#eceee0; --line:#d7dbc3;
+    --text:#242a12; --muted:#767d5c; --muted-2:#94997a;
+    --accent:#5c6b1f; --accent-ink:#f8fbe9; --accent-soft:#e6ecc9;
+    --ok:#2f7a8f; --ok-soft:#dfeef3; --warn:#a66a0a; --warn-soft:#f7ecd6;
+    --danger:#c23b34; --danger-soft:#faded9;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --ground:#12140a; --surface:#1a1d0f; --surface-2:#212512; --line:#383f1e;
+      --text:#eef1e0; --muted:#a3a986; --muted-2:#82886a;
+      --accent:#b7d43a; --accent-ink:#1a2206; --accent-soft:#333d16;
+      --ok:#6fc6e0; --ok-soft:#16303a; --warn:#f0b429; --warn-soft:#3a2e10;
+      --danger:#ef5350; --danger-soft:#3a1c1a;
+    }
+  }
+  :root[data-theme="dark"]{
+    --ground:#12140a; --surface:#1a1d0f; --surface-2:#212512; --line:#383f1e;
+    --text:#eef1e0; --muted:#a3a986; --muted-2:#82886a;
+    --accent:#b7d43a; --accent-ink:#1a2206; --accent-soft:#333d16;
+    --ok:#6fc6e0; --ok-soft:#16303a; --warn:#f0b429; --warn-soft:#3a2e10;
+    --danger:#ef5350; --danger-soft:#3a1c1a;
+  }
+
+  *{box-sizing:border-box}
+  body{
+    margin:0; background:var(--ground); color:var(--text);
+    font-family:"IBM Plex Sans",-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+    font-size:16px; line-height:1.6;
+  }
+  .envoltura{max-width:760px; margin:0 auto; padding:0 20px 90px}
+
+  h1,h2,h3{font-family:"Big Shoulders Display","IBM Plex Sans",sans-serif;
+    font-weight:800; letter-spacing:.4px; text-wrap:balance; margin:0}
+  h1{font-size:clamp(38px,9vw,58px); line-height:.95}
+  h2{font-size:clamp(26px,5.5vw,34px); line-height:1.05}
+  h3{font-size:20px; line-height:1.2}
+  p{margin:0}
+  code, .mono{font-family:"IBM Plex Mono",ui-monospace,monospace}
+  code{background:var(--surface-2); border:1px solid var(--line); border-radius:5px;
+    padding:1px 6px; font-size:.88em; word-break:break-word}
+  b{font-weight:700}
+  a{color:var(--accent)}
+
+  /* --- portada --- */
+  header.portada{padding:56px 0 32px; display:flex; flex-direction:column; gap:16px}
+  header.portada .marca{font-family:"IBM Plex Mono",monospace; font-size:11.5px;
+    letter-spacing:.16em; text-transform:uppercase; color:var(--accent);
+    display:flex; align-items:center; gap:10px}
+  header.portada .marca::after{content:""; flex:1; height:1px; background:var(--line)}
+  header.portada p.bajada{color:var(--muted); font-size:17px; max-width:56ch}
+
+  section.manual{padding-top:34px; display:flex; flex-direction:column; gap:34px}
+
+  /* --- pasos: la numeración dice el orden real en que se hace --- */
+  .paso{display:grid; grid-template-columns:44px 1fr; gap:18px; align-items:start}
+  @media(max-width:520px){ .paso{grid-template-columns:36px 1fr; gap:13px} }
+  .paso .num{font-family:"Big Shoulders Display",sans-serif; font-size:34px;
+    font-weight:800; line-height:1; color:var(--accent); text-align:right;
+    font-variant-numeric:tabular-nums; padding-top:2px}
+  .paso .cuerpo{display:flex; flex-direction:column; gap:12px; min-width:0}
+  .paso .cuerpo > p{max-width:62ch}
+
+  ul.lista{margin:0; padding-left:20px; display:flex; flex-direction:column; gap:7px}
+  ul.lista li{max-width:60ch}
+
+  /* --- la pantalla de la app, incrustada de verdad --- */
+  figure.pantalla{margin:4px 0; display:flex; flex-direction:column; gap:8px}
+  figure.pantalla .marco{border:1px solid var(--line); border-radius:18px;
+    background:var(--surface); overflow:hidden; width:390px; max-width:100%;
+    box-shadow:0 2px 14px rgba(36,42,18,.09)}
+  figure.pantalla iframe{display:block; width:390px; max-width:100%; border:0}
+  figure.pantalla figcaption{font-size:13px; color:var(--muted-2);
+    font-family:"IBM Plex Mono",monospace}
+
+  /* --- avisos --- */
+  .nota{border-left:3px solid var(--accent); background:var(--accent-soft);
+    padding:13px 16px; border-radius:0 10px 10px 0; font-size:15px; color:var(--text)}
+  .nota.ojo{border-left-color:var(--warn); background:var(--warn-soft)}
+  .nota.no{border-left-color:var(--danger); background:var(--danger-soft)}
+  .nota b{display:block; margin-bottom:3px}
+
+  /* --- enlaces por técnico --- */
+  .enlaces{display:flex; flex-direction:column; gap:10px}
+  .enlaces .fila{background:var(--surface); border:1px solid var(--line);
+    border-radius:12px; padding:12px 14px; display:flex; flex-direction:column; gap:5px}
+  .enlaces .fila .quien{font-weight:700; font-size:15px}
+  .enlaces .fila .url{font-family:"IBM Plex Mono",monospace; font-size:12px;
+    color:var(--muted); word-break:break-all}
+
+  hr.sep{border:0; border-top:1px solid var(--line); margin:0}
+
+  footer.pie{padding-top:40px; color:var(--muted-2); font-size:13.5px;
+    border-top:1px solid var(--line); margin-top:20px}
+
+  @media (prefers-reduced-motion: reduce){ *{transition:none !important} }
+</style>
+
+<div class="envoltura">
+
+<header class="portada">
+  <div class="marca">CAREL &middot; Fibra &oacute;ptica</div>
+  <h1>Manual del<br>t&eacute;cnico</h1>
+  <p class="bajada">C&oacute;mo se captura una orden desde el tel&eacute;fono: llenarla, mandar el reporte al grupo de WhatsApp y anotar el material. Las pantallas son las de la app, con datos de ejemplo.</p>
+</header>
+
+<section class="manual">
+
+  <div>
+    <h2>Antes de empezar</h2>
+    <p style="margin-top:10px;max-width:62ch">Tu jefe te manda un enlace. Ese enlace es tuyo:
+    trae tu nombre, tu COPE y tu expediente ya puestos. <b>No necesitas cuenta de nada</b> &mdash;
+    ni Google, ni contrase&ntilde;a, ni instalar una app.</p>
+    <div class="nota" style="margin-top:14px">
+      <b>Gu&aacute;rdalo en la pantalla de inicio</b>
+      &Aacute;brelo una vez, toca el men&uacute; del navegador y elige <i>A&ntilde;adir a pantalla de
+      inicio</i>. Queda como si fuera una aplicaci&oacute;n y no tienes que buscar el mensaje cada vez.
+    </div>
+  </div>
+
+  <hr class="sep">
+
+  <div class="paso">
+    <div class="num">1</div>
+    <div class="cuerpo">
+      <h3>Llena la orden</h3>
+      <p>Arriba sale tu n&uacute;mero de la semana &mdash; el <b>1FIBRA</b>, <b>2FIBRA</b>, y as&iacute;.
+      Lo pone solo y se reinicia cada lunes. Solo t&oacute;calo si tienes que corregirlo.</p>
+      <figure class="pantalla">
+        <div class="marco"><iframe title="La pantalla de la orden" data-pantalla="orden" loading="lazy"></iframe></div>
+        <figcaption>1 &middot; La orden</figcaption>
+      </figure>
+      <ul class="lista">
+        <li><b>COPE</b> y <b>EXPEDIENTE DE COPE</b> ya vienen puestos. Son tuyos y no cambian.</li>
+        <li>Los campos con <b>*</b> son obligatorios: folio, tipo de OS, cliente, tel&eacute;fono,
+        serie y metraje.</li>
+        <li>Donde hay una lista, escoge de ah&iacute;. Si lo que buscas no est&aacute;, elige
+        <b>otro&hellip; (escribir)</b> y tecl&eacute;alo: la pr&oacute;xima vez ya aparece en la lista.</li>
+        <li>Al escribir la <b>SERIE</b>, el <b>MODELO DE MODEM</b> se llena solo.</li>
+      </ul>
+      <div class="nota ojo">
+        <b>Si el folio o el tel&eacute;fono ya se usaron</b>
+        Sale un aviso en amarillo con la fecha y el folio de la orden anterior.
+        <b style="display:inline;font-weight:700">No te bloquea</b>: si es una orden nueva de
+        verdad, sigue. Si te equivocaste, corr&iacute;gelo ah&iacute; mismo.
+      </div>
+    </div>
+  </div>
+
+  <div class="paso">
+    <div class="num">2</div>
+    <div class="cuerpo">
+      <h3>Copia el reporte y m&aacute;ndalo por WhatsApp</h3>
+      <p>Toca <b>Generar reporte</b>. Abajo aparece el texto tal como debe ir al grupo.
+      Toca <b>Copiar para WhatsApp</b>, abre el grupo y pega.</p>
+      <figure class="pantalla">
+        <div class="marco"><iframe title="El mensaje listo para WhatsApp" data-pantalla="mensaje" loading="lazy"></iframe></div>
+        <figcaption>Listo para WhatsApp</figcaption>
+      </figure>
+      <p>Si ves algo mal, <b>Corregir algo</b> te regresa al formulario sin perder nada.</p>
+    </div>
+  </div>
+
+  <div class="paso">
+    <div class="num">3</div>
+    <div class="cuerpo">
+      <h3>Captura el material</h3>
+      <p>Toca <b>Siguiente</b>. Ah&iacute; se guarda la orden y pasas al material.</p>
+      <figure class="pantalla">
+        <div class="marco"><iframe title="La pantalla del material" data-pantalla="material" loading="lazy"></iframe></div>
+        <figcaption>2 &middot; El material</figcaption>
+      </figure>
+      <ul class="lista">
+        <li><b>ARGOLLAS, TAQUETES, ROSETA y ONT</b> ya vienen con lo de siempre. No los toques
+        salvo que esa orden haya sido distinta.</li>
+        <li><b>TENSORES</b> viene con una sugerencia sacada del metraje. Es solo eso, una
+        sugerencia: pon los que de verdad usaste.</li>
+        <li>Captura <b>SELLOS</b>, <b>SINCHO</b> y <b>SUJ MARFIL</b>.</li>
+      </ul>
+      <p>Toca <b>Guardar material</b>. Sale <b>Capturado con &eacute;xito</b> y el formulario queda
+      limpio para la siguiente orden, con tu n&uacute;mero ya avanzado.</p>
+    </div>
+  </div>
+
+  <div class="paso">
+    <div class="num">4</div>
+    <div class="cuerpo">
+      <h3>Si te equivocaste, corr&iacute;gelo t&uacute; mismo</h3>
+      <p>En <b>Mis &oacute;rdenes</b> est&aacute; lo que capturaste esta semana. Solo lo tuyo:
+      no ves ni tocas lo de tus compa&ntilde;eros.</p>
+      <figure class="pantalla">
+        <div class="marco"><iframe title="Mis órdenes" data-pantalla="mias" loading="lazy"></iframe></div>
+        <figcaption>Mis &oacute;rdenes</figcaption>
+      </figure>
+      <ul class="lista">
+        <li><b>Corregir</b> vuelve a abrir la orden con todo lo que capturaste.</li>
+        <li><b>Copiar WhatsApp</b> te da otra vez el mensaje, por si se borr&oacute; del chat.</li>
+        <li>Una orden marcada <b>falta material</b> es una que dejaste a medias.</li>
+      </ul>
+    </div>
+  </div>
+
+  <hr class="sep">
+
+  <div>
+    <h2>Cuando algo falla</h2>
+    <div style="display:flex;flex-direction:column;gap:12px;margin-top:14px">
+      <div class="nota ojo">
+        <b>&laquo;No se pudo conectar&raquo;</b>
+        Es la se&ntilde;al. Lo que ya escribiste no se pierde: espera a tener l&iacute;nea y
+        vuelve a tocar el bot&oacute;n.
+      </div>
+      <div class="nota ojo">
+        <b>Guard&eacute; dos veces la misma orden</b>
+        No pasa nada. El sistema reconoce que es la misma y no la duplica.
+      </div>
+      <div class="nota no">
+        <b>Sale mi nombre pero no soy yo</b>
+        Toca <b>cambiar</b> junto a tu nombre y pide tu enlace. No captures con el nombre de
+        otro: el material se le carga a esa persona.
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer class="pie">
+  Reporte de OS &middot; CAREL &mdash; los datos de las pantallas son de ejemplo.
+</footer>
+
+</div>
+
+<template id="css-app">  :root{
+    --ground:#f5f6ee; --surface:#ffffff; --surface-2:#eceee0; --line:#d7dbc3;
+    --text:#242a12; --muted:#767d5c; --muted-2:#94997a;
+    --accent:#5c6b1f; --accent-ink:#f8fbe9; --accent-soft:#e6ecc9;
+    --ok:#2f7a8f; --ok-soft:#dfeef3; --warn:#a66a0a; --warn-soft:#f7ecd6;
+    --danger:#c23b34; --danger-soft:#faded9;
+    --radius-card:14px; --radius-ctl:9px;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --ground:#12140a; --surface:#1a1d0f; --surface-2:#212512; --line:#383f1e;
+      --text:#eef1e0; --muted:#a3a986; --muted-2:#82886a;
+      --accent:#b7d43a; --accent-ink:#1a2206; --accent-soft:#333d16;
+      --ok:#6fc6e0; --ok-soft:#16303a; --warn:#f0b429; --warn-soft:#3a2e10;
+      --danger:#ef5350; --danger-soft:#3a1c1a;
+    }
+  }
+  :root[data-theme="dark"]{
+    --ground:#12140a; --surface:#1a1d0f; --surface-2:#212512; --line:#383f1e;
+    --text:#eef1e0; --muted:#a3a986; --muted-2:#82886a;
+    --accent:#b7d43a; --accent-ink:#1a2206; --accent-soft:#333d16;
+    --ok:#6fc6e0; --ok-soft:#16303a; --warn:#f0b429; --warn-soft:#3a2e10;
+    --danger:#ef5350; --danger-soft:#3a1c1a;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{
+    background:var(--ground); color:var(--text); min-height:100vh;
+    font-family:"IBM Plex Sans",-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+    line-height:1.45; font-size:15px; -webkit-tap-highlight-color:transparent;
+  }
+  h1,h2,h3{font-family:"Big Shoulders Display","IBM Plex Sans",sans-serif;font-weight:800;
+    letter-spacing:.2px; text-wrap:balance; margin:0}
+  .mono{font-family:"IBM Plex Mono",ui-monospace,monospace; font-variant-numeric:tabular-nums}
+
+  .topbar{max-width:980px;margin:0 auto;padding:16px 18px 0}
+  .topbar .brand{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+  .topbar h1{font-size:25px;color:var(--text)}
+  .topbar .brand small{font-family:"IBM Plex Mono",monospace;font-size:11px;letter-spacing:.08em;
+    text-transform:uppercase;color:var(--accent);background:var(--accent-soft);
+    padding:3px 8px;border-radius:20px}
+  .tecnico-chip{font-size:12.5px;color:var(--muted);margin-top:4px}
+  .tecnico-chip b{color:var(--text);font-weight:700}
+  .tecnico-chip a.change{color:var(--accent);text-decoration:none;margin-left:8px}
+
+  .tabs{max-width:980px;margin:14px auto 0;padding:0 18px;display:flex;gap:4px;
+    border-bottom:1px solid var(--line);overflow-x:auto}
+  .tab{appearance:none;border:none;background:none;color:var(--muted);font-family:inherit;
+    font-size:14px;font-weight:600;padding:10px 2px;margin-right:16px;cursor:pointer;
+    border-bottom:2.5px solid transparent;white-space:nowrap}
+  .tab.active{color:var(--accent);border-bottom-color:var(--accent)}
+  .tab .n{display:inline-block;margin-left:5px;background:var(--surface-2);color:var(--muted);
+    font-family:"IBM Plex Mono",monospace;font-size:11px;padding:1px 6px;border-radius:20px}
+
+  main.view{max-width:980px;margin:0 auto;padding:18px 18px 80px}
+  main.view[hidden]{display:none}
+
+  .ticket{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius-card);
+    max-width:560px;margin:0 auto;overflow:hidden;box-shadow:0 1px 2px rgba(0,0,0,.04)}
+  .ticket__band{height:6px;background:var(--accent)}
+  .ticket__head{padding:15px 18px 2px;display:flex;justify-content:space-between;
+    align-items:flex-start;gap:10px}
+  .ticket__head h2{font-size:19px}
+  .ticket__body{padding:12px 18px 20px}
+
+  .pasos{display:flex;gap:8px;padding:0 18px 10px;font-size:11.5px;color:var(--muted-2);
+    font-family:"IBM Plex Mono",monospace;text-transform:uppercase;letter-spacing:.05em}
+  .pasos span.on{color:var(--accent);font-weight:700}
+
+  fieldset.grupo{border:none;padding:0;margin:0 0 6px}
+  fieldset.grupo > legend{font-family:"IBM Plex Mono",monospace;font-size:10.5px;
+    text-transform:uppercase;letter-spacing:.09em;color:var(--muted-2);
+    padding:14px 0 8px;width:100%;border-bottom:1px dashed var(--line);margin-bottom:12px}
+
+  .campos{display:grid;grid-template-columns:1fr 1fr;gap:11px}
+  .campo{margin:0}
+  .campo.ancho{grid-column:1 / -1}
+  @media(max-width:430px){.campos{grid-template-columns:1fr}.campo{grid-column:1 / -1}}
+  .campo label{display:block;font-size:11px;font-weight:700;text-transform:uppercase;
+    letter-spacing:.06em;color:var(--muted);margin-bottom:5px}
+  .campo label .req{color:var(--accent)}
+  .campo input, .campo select, .campo textarea{
+    width:100%;background:var(--surface-2);border:1.5px solid var(--line);
+    border-radius:var(--radius-ctl);padding:11px 11px;font-size:16px;color:var(--text);
+    font-family:"IBM Plex Sans",sans-serif}
+  .campo input.mono, .campo input[inputmode=numeric]{font-family:"IBM Plex Mono",monospace}
+  .campo input:focus, .campo select:focus, .campo textarea:focus{outline:none;border-color:var(--accent)}
+  .campo input.malo{border-color:var(--danger)}
+  .campo .pista{font-size:11.5px;color:var(--muted-2);margin-top:4px}
+  .campo .pista.warn{color:var(--warn);font-weight:600}
+  .campo input[hidden]{display:none}
+
+  .nfibra{display:flex;align-items:center;gap:10px;background:var(--accent-soft);
+    border:1px solid var(--line);border-radius:var(--radius-ctl);padding:10px 12px;margin-bottom:4px}
+  .nfibra .et{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;
+    color:var(--muted)}
+  .nfibra input{width:74px;background:var(--surface);border:1.5px solid var(--line);
+    border-radius:8px;padding:7px 8px;font-family:"IBM Plex Mono",monospace;font-size:19px;
+    font-weight:700;color:var(--text);text-align:center}
+  .nfibra .suf{font-family:"Big Shoulders Display",sans-serif;font-size:21px;font-weight:800;
+    color:var(--accent)}
+
+  .matgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:6px 0 16px}
+  @media(max-width:380px){.matgrid{grid-template-columns:1fr}}
+  .matrow{background:var(--surface-2);border:1px solid var(--line);border-radius:var(--radius-ctl);
+    padding:9px 10px}
+  .matrow.auto{opacity:.72}
+  .matrow .mlabel{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px}
+  .matrow .mlabel span.name{font-size:12px;font-weight:600;color:var(--text)}
+  .matrow .mlabel span.col{font-family:"IBM Plex Mono",monospace;font-size:10px;color:var(--muted-2);
+    background:var(--surface);border:1px solid var(--line);border-radius:5px;padding:1px 5px}
+  .stepper{display:flex;align-items:stretch;gap:6px}
+  .stepper button{width:38px;flex:none;border:1px solid var(--line);background:var(--surface);
+    color:var(--text);font-size:19px;font-weight:700;border-radius:8px;cursor:pointer;line-height:1}
+  .stepper button:active{background:var(--accent-soft);border-color:var(--accent)}
+  .stepper input{width:100%;text-align:center;border:1px solid var(--line);background:var(--surface);
+    border-radius:8px;font-family:"IBM Plex Mono",monospace;font-size:18px;font-weight:600;
+    color:var(--text);padding:6px 2px;-moz-appearance:textfield}
+  .stepper input::-webkit-outer-spin-button,.stepper input::-webkit-inner-spin-button{
+    -webkit-appearance:none;margin:0}
+
+  button.big{width:100%;border:none;border-radius:11px;padding:15px;font-size:16px;font-weight:700;
+    font-family:"IBM Plex Sans",sans-serif;cursor:pointer;background:var(--accent);
+    color:var(--accent-ink);margin-top:6px}
+  button.big.sec{background:var(--surface-2);color:var(--text);border:1.5px solid var(--line)}
+  button.big:disabled{opacity:.55;cursor:not-allowed}
+  .botonera{display:flex;gap:9px;margin-top:14px;flex-wrap:wrap}
+  .botonera button.big{flex:1 1 180px;margin-top:0}
+
+  .note{font-size:12px;color:var(--muted);text-align:center;margin-top:12px}
+  .banner{border-radius:10px;padding:10px 13px;font-size:13px;margin-bottom:14px}
+  .banner.warn{background:var(--warn-soft);color:var(--warn)}
+  .banner.danger{background:var(--danger-soft);color:var(--danger)}
+  .banner.ok{background:var(--ok-soft);color:var(--ok);font-weight:600}
+
+  pre.mensaje{background:var(--surface-2);border:1px solid var(--line);border-radius:10px;
+    padding:13px;font-family:"IBM Plex Mono",monospace;font-size:12px;line-height:1.5;
+    white-space:pre-wrap;word-break:break-word;margin:0 0 12px;max-height:340px;overflow:auto;
+    color:var(--text)}
+
+  .techblock{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius-card);
+    margin-bottom:18px;overflow:hidden}
+  .techblock__head{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;
+    gap:10px;padding:12px 16px;border-bottom:1px solid var(--line);background:var(--surface-2)}
+  .techblock__head h3{font-size:17px}
+  .techblock__head .count{font-family:"IBM Plex Mono",monospace;font-size:12px;color:var(--muted)}
+  .tablewrap{overflow-x:auto}
+  table{border-collapse:collapse;width:100%;font-size:13px;white-space:nowrap}
+  th,td{padding:8px 11px;border-bottom:1px solid var(--line);text-align:left}
+  th{background:var(--surface-2);color:var(--muted);font-weight:700;font-size:10.5px;
+    text-transform:uppercase;letter-spacing:.05em}
+  th small{color:var(--muted-2);font-weight:600;display:block;font-size:9.5px}
+  td.num{font-family:"IBM Plex Mono",monospace;text-align:right}
+  td.folio{font-family:"IBM Plex Mono",monospace;color:var(--muted)}
+  tr.pendiente td{background:var(--warn-soft)}
+  .pill{display:inline-block;font-size:10.5px;font-weight:700;padding:1px 7px;border-radius:20px;
+    font-family:"IBM Plex Mono",monospace}
+  .pill.falta{background:var(--warn-soft);color:var(--warn)}
+  .pill.dup{background:var(--danger-soft);color:var(--danger)}
+  .mini{background:none;border:1px solid var(--line);color:var(--muted);cursor:pointer;
+    font-size:12px;padding:4px 9px;border-radius:7px;font-family:inherit}
+  .mini:hover{border-color:var(--accent);color:var(--accent)}
+  .mini.confirm{color:var(--danger);border-color:var(--danger);font-weight:700}
+
+  .copyrow{display:flex;flex-wrap:wrap;gap:8px;padding:12px 16px}
+  .copybtn{border:1.5px solid var(--line);background:var(--surface-2);color:var(--text);
+    border-radius:9px;padding:9px 13px;font-size:13px;font-weight:600;cursor:pointer;
+    font-family:"IBM Plex Sans",sans-serif;display:flex;align-items:center;gap:7px}
+  .copybtn.destacado{border-color:var(--accent);background:var(--accent-soft)}
+  .copybtn .badge{font-family:"IBM Plex Mono",monospace;font-size:10.5px;background:var(--surface);
+    color:var(--accent);padding:1px 6px;border-radius:20px;border:1px solid var(--line)}
+  .footrow{display:flex;justify-content:flex-end;align-items:center;gap:10px;padding:11px 16px;
+    border-top:1px dashed var(--line)}
+  .empty{text-align:center;color:var(--muted);padding:40px 20px;border:1.5px dashed var(--line);
+    border-radius:var(--radius-card)}
+  .steps{background:var(--surface-2);border:1px dashed var(--line);border-radius:10px;
+    padding:12px 14px;margin:0 0 18px;font-size:13px;color:var(--muted)}
+  .steps b{color:var(--text)}
+  .steps code{font-family:"IBM Plex Mono",monospace;color:var(--accent);font-size:12px}
+
+  .orden{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius-card);
+    padding:12px 15px;margin-bottom:11px;display:flex;justify-content:space-between;
+    align-items:center;gap:12px;flex-wrap:wrap}
+  .orden .datos{min-width:0}
+  .orden .datos .l1{font-weight:700;font-size:14.5px}
+  .orden .datos .l2{font-size:12.5px;color:var(--muted);margin-top:2px}
+  .orden .acciones{display:flex;gap:7px;flex-wrap:wrap}
+
+  .conboton{display:flex;gap:6px;align-items:stretch}
+  .conboton input{flex:1;min-width:0}
+  button.scan{flex:none;width:52px;border:1.5px solid var(--line);background:var(--surface-2);
+    border-radius:var(--radius-ctl);font-size:20px;cursor:pointer;line-height:1;color:var(--text)}
+  button.scan:active{background:var(--accent-soft);border-color:var(--accent)}
+
+  #escaner{position:fixed;inset:0;background:rgba(0,0,0,.86);z-index:60;
+    display:flex;align-items:center;justify-content:center;padding:16px}
+  #escaner[hidden]{display:none}
+  .escaner__caja{background:var(--surface);border-radius:var(--radius-card);width:100%;
+    max-width:460px;overflow:hidden;border:1px solid var(--line)}
+  .escaner__caja h3{font-size:18px;padding:14px 16px 0}
+  #escaner-video{width:100%;max-height:56vh;display:block;background:#000;object-fit:cover;
+    margin-top:10px}
+  .escaner__cuerpo{padding:12px 16px 16px}
+  #escaner-msg{font-size:13px;color:var(--muted);margin-bottom:10px}
+  #escaner-msg.malo{color:var(--danger);font-weight:600}
+  .leido{background:var(--accent-soft);border:1px solid var(--accent);border-radius:9px;
+    padding:11px 12px;font-size:19px;font-weight:700;text-align:center;word-break:break-all;
+    margin-bottom:10px;color:var(--text)}
+
+  #toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);
+    background:var(--text);color:var(--ground);padding:11px 18px;border-radius:30px;
+    font-size:13.5px;font-weight:600;box-shadow:0 6px 20px rgba(0,0,0,.25);opacity:0;
+    pointer-events:none;transition:opacity .2s;z-index:50;max-width:90vw;text-align:center}
+  #toast.show{opacity:1}
+  #toast.err{background:var(--danger)}
+
+  @media (prefers-reduced-motion: reduce){ *{transition:none !important} }</template>
+
+<template data-frag="orden">
+<div class="topbar">
+  <div class="brand"><h1>Reporte de OS</h1><small>FTTH &middot; CAREL</small></div>
+  <div class="tecnico-chip">T&eacute;cnico: <b>CARLOS DANIEL BERMUDEZ</b><a class="change" href="#">cambiar</a></div>
+</div>
+<nav class="tabs">
+  <button class="tab active" type="button">Nueva orden</button>
+  <button class="tab" type="button">Mis &oacute;rdenes <span class="n">0</span></button>
+</nav>
+<main class="view">
+  <div class="ticket">
+    <div class="ticket__band"></div>
+    <div class="ticket__head"><h2>Nueva orden</h2></div>
+    <div class="pasos"><span class="on">1 &middot; La orden</span><span>&rarr;</span><span>2 &middot; El material</span></div>
+    <div class="ticket__body">
+      <div class="nfibra">
+        <span class="et">N&uacute;mero</span>
+        <input type="number" value="1" readonly>
+        <span class="suf">FIBRA</span>
+        <span class="pista" style="font-size:11.5px;color:var(--muted)">semana del 24/08/2026</span>
+      </div>
+      <fieldset class="grupo"><legend>La orden</legend><div class="campos">
+        <div class="campo"><label>COPE</label>
+          <input type="text" value="COMITAN" readonly>
+          <div class="pista">Es el tuyo, no cambia. T&oacute;calo solo si te lo cambiaron.</div></div>
+        <div class="campo"><label>FOLIO <span class="req">*</span></label>
+          <input type="text" class="mono" value="058123456" readonly>
+          <div class="pista"></div></div>
+        <div class="campo ancho"><label>TIPO DE OS <span class="req">*</span></label>
+          <select><option selected>TS1L7SG</option><option>otro&hellip; (escribir)</option></select>
+          <div class="pista"></div></div>
+        <div class="campo"><label>DISTRITO</label>
+          <select><option selected>XAC0006FO</option><option>otro&hellip; (escribir)</option></select>
+          <div class="pista"></div></div>
+        <div class="campo"><label>TERMINAL</label>
+          <select><option selected>A4</option><option>otro&hellip; (escribir)</option></select>
+          <div class="pista"></div></div>
+      </div></fieldset>
+      <fieldset class="grupo"><legend>El cliente</legend><div class="campos">
+        <div class="campo ancho"><label>CLIENTE <span class="req">*</span></label>
+          <input type="text" value="CLIENTE DE EJEMPLO" readonly><div class="pista"></div></div>
+        <div class="campo"><label>TELEFONO <span class="req">*</span></label>
+          <input type="text" class="mono" value="9631234567" readonly>
+          <div class="pista warn">&#9888; Este tel&eacute;fono ya aparece: 12/08/2026, folio 058100200. Puedes guardar igual.</div></div>
+        <div class="campo"><label>EXPEDIENTE DE COPE</label>
+          <input type="text" class="mono" value="00917921" readonly>
+          <div class="pista">Es el tuyo, no cambia.</div></div>
+      </div></fieldset>
+      <button class="big" type="button">Generar reporte</button>
+    </div>
+  </div>
+</main>
+</template>
+
+<template data-frag="mensaje">
+<main class="view">
+  <div class="ticket">
+    <div class="ticket__band"></div>
+    <div class="ticket__head"><h2>Listo para WhatsApp</h2></div>
+    <div class="ticket__body">
+      <pre class="mensaje">*1FIBRA*
+*COPE:* COMITAN
+*FOLIO:* 058123456
+*TIPO DE OS:* TS1L7SG
+*DISTRITO* XAC0006FO
+*TERMINAL* A4
+*PUERTO* 6
+*CLIENTE:* CLIENTE DE EJEMPLO
+*TELEFONO:* 9631234567
+*EXPEDIENTE DE COPE:*  00917921
+*SERIE:* ZTEGC0FF1234
+*MODELO DE MODEM:* ZTE
+*CV* COMERCIAL
+*DIRECCION:* CALLE DE EJEMPLO 100
+*BARRIO:* CENTRO
+*METRAJE:*  150 metros AEREO
+*TECNICO* CARLOS DANIEL BERMUDEZ
+*FECHA* 28/08/2026
+*OBSERVACIONES:* VOZ DATOS
+*AUTORIZA*
+*NIP*
+*VIGENCIA*
+*terminal*
+*domicilio:*
+*SUBTERRANEO*
+*AEREO* &#9989;</pre>
+      <div class="botonera">
+        <button class="big" type="button">&#128203; Copiar para WhatsApp</button>
+        <button class="big sec" type="button">Corregir algo</button>
+      </div>
+      <div class="botonera">
+        <button class="big" type="button">Siguiente &rarr; capturar material</button>
+      </div>
+    </div>
+  </div>
+</main>
+</template>
+
+<template data-frag="material">
+<main class="view">
+  <div class="ticket">
+    <div class="ticket__band"></div>
+    <div class="ticket__head"><h2>El material</h2></div>
+    <div class="pasos"><span>1 &middot; La orden</span><span>&rarr;</span><span class="on">2 &middot; El material</span></div>
+    <div class="ticket__body">
+      <div class="steps"><b>Folio 058123456</b> &mdash; CLIENTE DE EJEMPLO<br>150 metros AEREO &middot; TS1L7SG</div>
+      <div class="matgrid">
+        <div class="matrow auto"><div class="mlabel"><span class="name">ARGOLLAS</span><span class="col">M</span></div>
+          <div class="stepper"><button type="button">&minus;</button><input type="number" value="1" readonly><button type="button">+</button></div></div>
+        <div class="matrow auto"><div class="mlabel"><span class="name">TAQUETES</span><span class="col">O</span></div>
+          <div class="stepper"><button type="button">&minus;</button><input type="number" value="3" readonly><button type="button">+</button></div></div>
+        <div class="matrow auto"><div class="mlabel"><span class="name">ROSETA</span><span class="col">Q</span></div>
+          <div class="stepper"><button type="button">&minus;</button><input type="number" value="1" readonly><button type="button">+</button></div></div>
+        <div class="matrow auto"><div class="mlabel"><span class="name">ONT</span><span class="col">Z</span></div>
+          <div class="stepper"><button type="button">&minus;</button><input type="number" value="1" readonly><button type="button">+</button></div></div>
+        <div class="matrow"><div class="mlabel"><span class="name">SELLOS</span><span class="col">R</span></div>
+          <div class="stepper"><button type="button">&minus;</button><input type="number" value="2" readonly><button type="button">+</button></div></div>
+        <div class="matrow"><div class="mlabel"><span class="name">SINCHO</span><span class="col">S</span></div>
+          <div class="stepper"><button type="button">&minus;</button><input type="number" value="1" readonly><button type="button">+</button></div></div>
+        <div class="matrow"><div class="mlabel"><span class="name">TENSORES</span><span class="col">V</span></div>
+          <div class="stepper"><button type="button">&minus;</button><input type="number" value="6" readonly><button type="button">+</button></div></div>
+        <div class="matrow"><div class="mlabel"><span class="name">SUJ MARFIL</span><span class="col">X</span></div>
+          <div class="stepper"><button type="button">&minus;</button><input type="number" value="10" readonly><button type="button">+</button></div></div>
+      </div>
+      <button class="big" type="button">Guardar material</button>
+      <p class="note">Con 150 metros la f&oacute;rmula del Excel da 6 tensores. Es una sugerencia &mdash; en 2026 el valor real fue distinto en 4 de cada 10 &oacute;rdenes.</p>
+    </div>
+  </div>
+</main>
+</template>
+
+<template data-frag="mias">
+<nav class="tabs">
+  <button class="tab" type="button">Nueva orden</button>
+  <button class="tab active" type="button">Mis &oacute;rdenes <span class="n">2</span></button>
+</nav>
+<main class="view">
+  <div class="steps"><b>Tus &oacute;rdenes de esta semana.</b> Puedes corregir cualquiera &mdash; se
+  vuelve a abrir en el formulario con todo lo que capturaste. Solo ves y editas las tuyas.</div>
+  <div class="orden"><div class="datos">
+      <div class="l1">2FIBRA &middot; folio 058123456 </div>
+      <div class="l2">CLIENTE DE EJEMPLO &middot; 28/08/2026 &middot; 150 m AEREO</div></div>
+    <div class="acciones"><button class="mini" type="button">Copiar WhatsApp</button><button class="mini" type="button">Corregir</button></div></div>
+  <div class="orden"><div class="datos">
+      <div class="l1">1FIBRA &middot; folio 058100200 <span class="pill falta">falta material</span></div>
+      <div class="l2">OTRO CLIENTE DE EJEMPLO &middot; 27/08/2026 &middot; 200 m AEREO</div></div>
+    <div class="acciones"><button class="mini" type="button">Copiar WhatsApp</button><button class="mini" type="button">Corregir</button></div></div>
+</main>
+</template>
+
+<script>
+(function(){
+  "use strict";
+
+  // Cada pantalla se dibuja dentro de un iframe de 390 px con el CSS de la app.
+  // Así se ve exactamente como en un teléfono, y sus estilos no se mezclan con
+  // los del manual.
+  // textContent, no innerHTML: al serializar, innerHTML escapa los ">" y un
+  // selector como "fieldset.grupo > legend" llegaría roto.
+  var css = document.getElementById("css-app").textContent;
+
+  document.querySelectorAll("iframe[data-pantalla]").forEach(function(marco){
+    var frag = document.querySelector('template[data-frag="'+marco.dataset.pantalla+'"]');
+    if(!frag) return;
+    var doc = '<!doctype html><html lang="es"><head><meta charset="utf-8">' +
+      '<link rel="stylesheet" href="https://fonts.googleapis.com/css2?' +
+      'family=Big+Shoulders+Display:wght@600;700;800&family=IBM+Plex+Sans:wght@400;500;600;700' +
+      '&family=IBM+Plex+Mono:wght@400;500;600&display=swap">' +
+      '<style>' + css + 'body{overflow:hidden}main.view{padding-bottom:20px}</style>' +
+      '</head><body>' + frag.innerHTML + '</body></html>';
+    marco.srcdoc = doc;
+    marco.addEventListener("load", function(){
+      try{
+        var d = marco.contentDocument;
+        marco.style.height = Math.min(d.body.scrollHeight + 8, 1400) + "px";
+      }catch(e){ marco.style.height = "620px"; }
+    });
+  });
+
+})();
+</script>
