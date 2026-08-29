@@ -1250,7 +1250,8 @@
       'En el Excel ocupan de la fila <b>2</b> a la <b>'+(total+1)+'</b> — ' +
       'borra hasta ahí antes de pegar, por si el corte anterior era más largo.' + aviso +
       '<br><br><button class="copybtn destacado" data-corte="1" style="display:inline-flex">' +
-        'Copiar TODO el corte <span class="badge">A:AD · '+total+' filas</span></button>' +
+        'Copiar TODO el corte <span class="badge">A:AD · '+total+
+          (total === 1 ? ' fila' : ' filas')+'</span></button>' +
       '<br><br>Nombre del archivo:<br><code>'+esc(nombre)+'.xlsx</code>' +
       '<button class="mini" data-nombre="'+esc(nombre)+'" style="margin-left:8px">copiar</button>' +
       '</div>';
