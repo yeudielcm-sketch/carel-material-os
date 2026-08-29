@@ -8,13 +8,26 @@
  * Se publica como Web App con acceso "Cualquier usuario" para que los técnicos
  * guarden SIN iniciar sesión en nada. Ver INSTRUCCIONES.md.
  *
- * Nada se borra: "eliminar" y "vaciar bloque" marcan la columna Copiada y la
- * fila desaparece de la app, pero se queda aquí. Es a propósito — al Excel
- * semanal solo llegan 7 de los 22 campos, así que esta hoja es el único lugar
- * donde vive el resto (cliente, dirección, barrio, serie, observaciones...).
+ * Archivar un corte NO borra: marca la columna Copiada y la fila desaparece de
+ * la app, pero se queda aquí unas semanas por si hay que corregir algo o avisar
+ * de un folio repetido. Pasado ese plazo se borra sola — ver SEMANAS_HISTORIAL.
  */
 
 var SHEET_NAME = "Reportes";
+
+/**
+ * Semanas que se conservan las órdenes YA ARCHIVADAS. Después se borran solas.
+ *
+ * No es descuido: una vez que el corte se pegó en su Excel y el archivo se
+ * guardó, el reporte ya vive en dos sitios —ese archivo y el chat de WhatsApp,
+ * que tiene el mensaje completo—. Lo que se conserva aquí es solo lo que la app
+ * necesita: avisar de folios repetidos (los dos casos reales de 2026 estaban a
+ * una semana), poder corregir un corte reciente, y el consecutivo de la semana.
+ *
+ * Sin esto la hoja crecería sin freno: con 13 técnicos son ~5,100 filas al año,
+ * y cada teléfono se baja el índice entero cada vez que abre la app.
+ */
+var SEMANAS_HISTORIAL = 8;
 
 var COLS = [
   "Timestamp", "ID", "ClaveCliente", "Tecnico", "NFibra", "Semana",
@@ -165,6 +178,7 @@ function filaAObjeto(r) {
 
 function listEntries(full) {
   var sh = getSheet();
+  podarSiTocaHoy(sh);
   var values = leerTodo(sh);
   var entries = [], indice = [], tecs = {}, cuenta = {};
 
@@ -324,10 +338,55 @@ function marcarCopiada(body) {
     n++;
     if (body.id) break;
   }
-  return { ok: true, marcadas: n };
+  var podadas = podar(sh);
+  return { ok: true, marcadas: n, podadas: podadas };
 }
 
 // ----------------------------------------------------------------- apoyos ---
+
+/**
+ * Borra lo archivado hace más de SEMANAS_HISTORIAL. Las filas viejas quedan
+ * juntas al principio (se añaden en orden), así que se borran por tramos
+ * seguidos en vez de una por una.
+ */
+function podar(sh) {
+  var values = leerTodo(sh);
+  if (!values.length) return 0;
+
+  var limite = new Date();
+  limite.setDate(limite.getDate() - SEMANAS_HISTORIAL * 7);
+
+  var aBorrar = [];
+  for (var i = 0; i < values.length; i++) {
+    var marca = String(values[i][idx("Copiada")]);
+    if (!marca) continue;                       // sigue pendiente de pegar
+    var m = marca.match(/^(\d{4})-(\d{2})-(\d{2})/);
+    if (!m) continue;
+    if (new Date(+m[1], +m[2] - 1, +m[3]) < limite) aBorrar.push(i + 2);
+  }
+  if (!aBorrar.length) return 0;
+
+  var borradas = 0;
+  var fin = aBorrar.length - 1;
+  while (fin >= 0) {
+    var ini = fin;
+    while (ini > 0 && aBorrar[ini - 1] === aBorrar[ini] - 1) ini--;
+    sh.deleteRows(aBorrar[ini], fin - ini + 1);
+    borradas += fin - ini + 1;
+    fin = ini - 1;
+  }
+  return borradas;
+}
+
+/** La poda se intenta una vez al día, no en cada petición. */
+function podarSiTocaHoy(sh) {
+  var props = PropertiesService.getScriptProperties();
+  var hoy = Utilities.formatDate(new Date(),
+    Session.getScriptTimeZone() || "America/Mexico_City", "yyyy-MM-dd");
+  if (props.getProperty("ultimaPoda") === hoy) return;
+  props.setProperty("ultimaPoda", hoy);
+  try { podar(sh); } catch (e) { /* que una poda fallida no tire la lectura */ }
+}
 
 function mismoTecnico(fila, tecnico) {
   var t = clean(tecnico);

@@ -361,7 +361,7 @@
   // lista:true  -> selector de los más usados, con "otro…" para escribir.
   // recuerda:true -> se preselecciona lo último que usó este técnico.
   var CAMPOS = [
-    {g:"La orden",   k:"cope",         lab:"COPE",              lista:true, recuerda:true, mayus:true},
+    {g:"La orden",   k:"cope",         lab:"COPE",              recuerda:true, mayus:true, fijoDelTecnico:true},
     {g:"La orden",   k:"folio",        lab:"FOLIO",             req:true, numerico:true},
     {g:"La orden",   k:"tipoOs",       lab:"TIPO DE OS",        lista:true, req:true, mayus:true, ancho:true},
     {g:"La orden",   k:"distrito",     lab:"DISTRITO",          lista:true, recuerda:true, mayus:true},
@@ -394,11 +394,14 @@
   // OJO: el orden de esta lista es el orden en que van los técnicos en el
   // Excel. Sale de los archivos de 2026: CARLOS > MARVIN > JULIO en 52 de los
   // 60 que están agrupados. No es alfabético, así que no lo reordenes.
+  // El COPE es la central, o sea la plaza. Sirve de ciudad: el corte de cada
+  // plaza sale por separado. Para dar de alta un técnico nuevo se añade aquí su
+  // renglón y se le manda su enlace; no hay que tocar nada más.
   var TECNICOS = [
-    {nombre:"CARLOS DANIEL BERMUDEZ",    expediente:"00917921", alias:[]},
-    {nombre:"MARVIN ALEXIS MARTINEZ",    expediente:"00831901",
+    {nombre:"CARLOS DANIEL BERMUDEZ",    cope:"COMITAN", expediente:"00917921", alias:[]},
+    {nombre:"MARVIN ALEXIS MARTINEZ",    cope:"COMITAN", expediente:"00831901",
      alias:["ALEXIS MARTINEZ", "MARVIN ALEXIS MARTINEZ CALVO"]},
-    {nombre:"JULIO CESAR LOPEZ SANCHEZ", expediente:"00746601", alias:[]}
+    {nombre:"JULIO CESAR LOPEZ SANCHEZ", cope:"COMITAN", expediente:"00746601", alias:[]}
   ];
 
   /**
@@ -556,6 +559,8 @@
   // Quien entra como administrador y no se identifica como técnico no captura
   // órdenes: solo copia y archiva. Se le deja únicamente el Consolidado.
   var SOLO_ADMIN = ADMIN && !params.get("tec");
+  // Plaza que se está mirando en el consolidado. Con una sola no se nota.
+  var COPE_VISTA = normName(params.get("cope") || "");
 
   var configured = WEBAPP_URL && WEBAPP_URL.indexOf("PEGA_AQUI") === -1;
 
@@ -884,9 +889,9 @@
     // El expediente sale de la tabla, no del histórico: es un dato de la
     // persona, no de la orden, y así aparece bien desde el primer folio y
     // desde cualquier teléfono, sin haber capturado nada antes.
-    if(k === "expediente"){
+    if(k === "expediente" || k === "cope"){
       var f = fichaTecnico(TECNICO);
-      if(f) return f.expediente;
+      if(f) return f[k];
     }
     var mios = STATE.entries.filter(function(e){ return nombreCanonico(e.tecnico) === TECNICO; });
     for(var i = mios.length - 1; i >= 0; i--){ if(mios[i][k]) return mios[i][k]; }
@@ -1261,8 +1266,22 @@
    * creciente**. Así estuvieron 60 de los 68 archivos de 2026; se mezcló a
    * partir de la S17 y Yeudiel pidió volver a lo de antes.
    */
+  function copesDelCorte(){
+    var vistos = {}, out = [];
+    STATE.entries.forEach(function(e){
+      var c = normName(e.cope) || "(SIN COPE)";
+      if(!vistos[c]){ vistos[c] = true; out.push(c); }
+    });
+    return out.sort();
+  }
+
   function filasDelCorte(){
-    return STATE.entries.slice().sort(function(a,b){
+    var copes = copesDelCorte();
+    if(copes.length > 1 && !COPE_VISTA) COPE_VISTA = copes[0];
+    var base = COPE_VISTA
+      ? STATE.entries.filter(function(e){ return (normName(e.cope) || "(SIN COPE)") === COPE_VISTA; })
+      : STATE.entries;
+    return base.slice().sort(function(a,b){
       var oa = ordenTecnico(a.tecnico), ob = ordenTecnico(b.tecnico);
       if(oa !== ob) return oa - ob;
       if(oa === 99){
@@ -1276,14 +1295,25 @@
   }
 
   function resumenDelCorte(orden, mapa){
-    var total = STATE.entries.length;
-    var sinMaterial = STATE.entries.filter(function(e){ return !e.materialOk; }).length;
-    var nombre = nombreDelCorte(STATE.entries);
+    var filas = filasDelCorte();                 // ya viene filtrado por plaza
+    var total = filas.length;
+    var sinMaterial = filas.filter(function(e){ return !e.materialOk; }).length;
+    var copes = copesDelCorte();
+    var nombre = nombreDelCorte(filas);
+    // Con varias plazas, dos cortes de la misma semana chocarían de nombre.
+    if(copes.length > 1 && COPE_VISTA) nombre += " " + COPE_VISTA;
+    var selector = copes.length > 1
+      ? '<div style="margin-bottom:10px">Plaza: <select id="sel-cope">' +
+          copes.map(function(c){
+            return '<option value="'+esc(c)+'"'+(c === COPE_VISTA ? ' selected' : '')+'>'+
+                   esc(c)+'</option>'; }).join("") +
+        '</select></div>'
+      : "";
     var aviso = sinMaterial
       ? '<br>⚠ <b>'+sinMaterial+'</b> '+(sinMaterial === 1 ? 'orden' : 'órdenes')+
         ' todavía sin material capturado.'
       : "";
-    return '<div class="steps"><b>Este corte: '+total+
+    return '<div class="steps">' + selector + '<b>Este corte: '+total+
       (total === 1 ? ' orden.' : ' órdenes.')+'</b> ' +
       'En el Excel ocupan de la fila <b>2</b> a la <b>'+(total+1)+'</b> — ' +
       'borra hasta ahí antes de pegar, por si el corte anterior era más largo.' + aviso +
@@ -1403,6 +1433,11 @@
       b.addEventListener("click", function(){
         copyText(tsv(filasDe(b.dataset.tec), b.dataset.cols.split(",")), b);
       });
+    });
+    var sel = qs("sel-cope");
+    if(sel) sel.addEventListener("change", function(){
+      COPE_VISTA = sel.value;
+      renderConsolidado();
     });
     body.querySelectorAll("[data-nombre]").forEach(function(b){
       b.addEventListener("click", function(){ copyText(b.dataset.nombre, b); });
