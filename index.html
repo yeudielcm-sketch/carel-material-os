@@ -715,17 +715,19 @@
 
   // ------------------------------------------------------------- escáner ---
 
-  // Lector de códigos del propio navegador — sin librerías ni peso extra.
-  // Chrome en Android lo trae; donde no exista, el botón de cámara no se dibuja
-  // y la serie se teclea como siempre.
-  // null = todavía no se ha comprobado; [] = el teléfono no puede leer nada.
+  // La serie de un módem suele ir en Code 128; los demás por si la etiqueta
+  // trae otra cosa.
+  var FORMATOS = ["code_128","code_39","code_93","codabar","itf",
+                  "qr_code","data_matrix","ean_13"];
+
+  // null = todavía no se ha comprobado; [] = el lector del teléfono no sirve.
   var FORMATOS_OK = null;
 
   /**
-   * No basta con que exista BarcodeDetector: hay teléfonos donde el objeto está
-   * pero no soporta ningún formato porque les falta el componente del sistema
-   * que lo implementa. Ahí el botón salía y no leía nunca. Se comprueba al
-   * arrancar, antes de dibujar el formulario.
+   * No basta con que exista BarcodeDetector: hay teléfonos —un Honor lo hizo—
+   * donde el objeto está pero no soporta ningún formato, porque les falta el
+   * componente del sistema que lo implementa. Ahí el botón salía y no leía
+   * nunca. Se comprueba al arrancar, antes de dibujar el formulario.
    */
   function probarLector(){
     if(typeof window.BarcodeDetector !== "function"){
@@ -739,30 +741,25 @@
       .catch(function(){ FORMATOS_OK = []; });
   }
 
-  function hayEscaner(){
+  function lectorNativoSirve(){
     return typeof window.BarcodeDetector === "function" &&
-           (FORMATOS_OK === null || FORMATOS_OK.length > 0);
+           FORMATOS_OK !== null && FORMATOS_OK.length > 0;
   }
 
-  /**
-   * Por qué no hay botón de cámara en este teléfono. Sin esto, el botón
-   * desaparece y ni el técnico ni nosotros sabemos si es que el teléfono no
-   * puede o si la app se rompió.
-   */
+  function hayCamara(){
+    return !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia);
+  }
+
+  // El botón sale si hay cámara. Si el teléfono no trae lector propio se usa el
+  // de respaldo, que se descarga solo en esos teléfonos y solo al escanear.
+  function hayEscaner(){ return hayCamara(); }
+
   function motivoSinEscaner(){
-    if(hayEscaner()) return "";
-    if(typeof window.BarcodeDetector !== "function")
-      return "Este navegador no puede leer códigos: escribe la serie a mano.";
-    return "Este teléfono dice tener lector pero no soporta ningún formato: "
-         + "escribe la serie a mano.";
+    if(hayCamara()) return "";
+    return "Este navegador no da acceso a la cámara: escribe la serie a mano.";
   }
 
-  // La serie de un módem suele ir en Code 128; los demás por si la etiqueta
-  // trae otra cosa.
-  var FORMATOS = ["code_128","code_39","code_93","codabar","itf",
-                  "qr_code","data_matrix","ean_13"];
-
-  var ESC = { stream:null, timer:null, campo:null, valor:"" };
+  var ESC = { stream:null, timer:null, campo:null, valor:"", lector:null };
 
   function escanerMsg(txt, malo){
     var m = qs("escaner-msg");
@@ -771,7 +768,7 @@
   }
 
   function abrirEscaner(campo){
-    if(!hayEscaner()) return;
+    if(!hayCamara()) return;
     ESC.campo = campo; ESC.valor = "";
     qs("escaner").hidden = false;
     qs("escaner-hallado").hidden = true;
@@ -793,48 +790,86 @@
       });
   }
 
+  /** Un código leído: se enseña y lo confirma quien está viendo el equipo. */
+  function codigoLeido(texto){
+    texto = String(texto || "").trim();
+    if(!texto || texto === ESC.valor) return;
+    // Una etiqueta de ONT trae varios códigos (serie, MAC, GPON SN) y la cámara
+    // agarra el que quede enfocado. Nunca se acepta a ciegas.
+    ESC.valor = texto;
+    qs("escaner-valor").textContent = texto;
+    qs("escaner-hallado").hidden = false;
+    escanerMsg("Comprueba que sea la serie y no otra etiqueta.", false);
+  }
+
   function arrancarDeteccion(){
-    var pedir = window.BarcodeDetector.getSupportedFormats
-      ? window.BarcodeDetector.getSupportedFormats()
-      : Promise.resolve(FORMATOS);
-    return pedir.then(function(soportados){
-      var usar = FORMATOS.filter(function(f){ return soportados.indexOf(f) !== -1; });
-      // Hay teléfonos donde BarcodeDetector existe pero no soporta NINGÚN
-      // formato, porque le falta el componente del sistema que lo implementa.
-      // Ahí el botón parecía funcionar y no leía nunca: mejor decirlo.
-      qs("escaner-lector").textContent = soportados.length
-        ? "lector del teléfono · " + soportados.slice(0, 6).join(", ")
-        : "lector del teléfono: presente pero sin formatos";
-      if(!soportados.length){
-        escanerMsg("Este teléfono no puede leer códigos: dice tener lector pero no "
-                 + "soporta ningún formato. Escribe la serie a mano.", true);
-        return;
-      }
-      var det = new window.BarcodeDetector({formats: usar});
+    return lectorNativoSirve() ? arrancarNativo() : arrancarRespaldo();
+  }
+
+  function arrancarNativo(){
+    var usar = FORMATOS.filter(function(f){ return FORMATOS_OK.indexOf(f) !== -1; });
+    qs("escaner-lector").textContent = "lector del teléfono · " + usar.slice(0, 6).join(", ");
+    var det = new window.BarcodeDetector({ formats: usar });
+    var v = qs("escaner-video");
+    ESC.timer = setInterval(function(){
+      if(!ESC.stream || v.readyState < 2) return;
+      det.detect(v).then(function(codigos){
+        if(codigos && codigos.length) codigoLeido(codigos[0].rawValue);
+      }).catch(function(){});
+    }, 250);
+    return Promise.resolve();
+  }
+
+  /**
+   * Lector de respaldo para los teléfonos sin lector propio. El archivo vive en
+   * este mismo sitio —nada de servidores ajenos, que en la calle es lo último
+   * que quieres— y se descarga una sola vez, y solo donde hace falta.
+   */
+  function cargarRespaldo(){
+    if(window.ZXing) return Promise.resolve();
+    if(cargarRespaldo._promesa) return cargarRespaldo._promesa;
+    escanerMsg("Preparando el lector, un momento…", false);
+    cargarRespaldo._promesa = new Promise(function(ok, mal){
+      var sc = document.createElement("script");
+      sc.src = "lector/zxing.js";
+      sc.onload = function(){ window.ZXing ? ok() : mal(new Error("no cargó")); };
+      sc.onerror = function(){ mal(new Error("no se pudo descargar")); };
+      document.head.appendChild(sc);
+    });
+    return cargarRespaldo._promesa;
+  }
+
+  function arrancarRespaldo(){
+    return cargarRespaldo().then(function(){
+      var Z = window.ZXing;
+      var pistas = new Map();
+      pistas.set(Z.DecodeHintType.POSSIBLE_FORMATS, [
+        Z.BarcodeFormat.CODE_128, Z.BarcodeFormat.CODE_39, Z.BarcodeFormat.CODE_93,
+        Z.BarcodeFormat.CODABAR, Z.BarcodeFormat.ITF, Z.BarcodeFormat.QR_CODE,
+        Z.BarcodeFormat.DATA_MATRIX, Z.BarcodeFormat.EAN_13
+      ]);
+      ESC.lector = new Z.BrowserMultiFormatReader(pistas);
+      qs("escaner-lector").textContent = "lector de respaldo (este teléfono no trae uno)";
+      escanerMsg("Centra el código de barras en el recuadro.", false);
       var v = qs("escaner-video");
       ESC.timer = setInterval(function(){
         if(!ESC.stream || v.readyState < 2) return;
-        det.detect(v).then(function(codigos){
-          if(!codigos || !codigos.length) return;
-          var texto = String(codigos[0].rawValue || "").trim();
-          if(!texto || texto === ESC.valor) return;
-          // Una etiqueta de ONT trae varios códigos (serie, MAC, GPON SN) y la
-          // cámara agarra el que quede enfocado. Se enseña y lo confirma quien
-          // está viendo el equipo, nunca se acepta a ciegas.
-          ESC.valor = texto;
-          qs("escaner-valor").textContent = texto;
-          qs("escaner-hallado").hidden = false;
-          escanerMsg("Comprueba que sea la serie y no otra etiqueta.", false);
-        }).catch(function(){});
-      }, 250);
+        try {
+          var r = ESC.lector.decode(v);
+          if(r && r.getText) codigoLeido(r.getText());
+        } catch(e){ /* no encontró nada en este cuadro: es lo normal */ }
+      }, 400);
     }).catch(function(err){
-      qs("escaner-lector").textContent = "el lector falló: " + (err && err.name ? err.name : "sin detalle");
-      escanerMsg("Este teléfono no pudo iniciar el lector. Escríbela a mano.", true);
+      qs("escaner-lector").textContent = "el lector de respaldo falló: " +
+        (err && err.message ? err.message : "sin detalle");
+      escanerMsg("No se pudo preparar el lector. Escribe la serie a mano.", true);
     });
   }
 
   function cerrarEscaner(){
     if(ESC.timer){ clearInterval(ESC.timer); ESC.timer = null; }
+    if(ESC.lector && ESC.lector.reset){ try{ ESC.lector.reset(); }catch(e){} }
+    ESC.lector = null;
     if(ESC.stream){
       ESC.stream.getTracks().forEach(function(t){ t.stop(); });
       ESC.stream = null;
