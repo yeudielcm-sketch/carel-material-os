@@ -744,6 +744,19 @@
            (FORMATOS_OK === null || FORMATOS_OK.length > 0);
   }
 
+  /**
+   * Por qué no hay botón de cámara en este teléfono. Sin esto, el botón
+   * desaparece y ni el técnico ni nosotros sabemos si es que el teléfono no
+   * puede o si la app se rompió.
+   */
+  function motivoSinEscaner(){
+    if(hayEscaner()) return "";
+    if(typeof window.BarcodeDetector !== "function")
+      return "Este navegador no puede leer códigos: escribe la serie a mano.";
+    return "Este teléfono dice tener lector pero no soporta ningún formato: "
+         + "escribe la serie a mano.";
+  }
+
   // La serie de un módem suele ir en Code 128; los demás por si la etiqueta
   // trae otra cosa.
   var FORMATOS = ["code_128","code_39","code_93","codabar","itf",
@@ -1008,8 +1021,10 @@
     CAMPOS.forEach(function(c){
       var previo = c.recuerda ? (ultimoDelTecnico(c.k) || recordado(c.k)) : "";
       ponerCampo(c.k, c.fecha ? hoyDDMMYYYY() : previo);
-      pista(c.k, c.fijoDelTecnico && previo
-        ? "Es el tuyo, no cambia. Tócalo solo si te lo cambiaron." : "");
+      var nota = "";
+      if(c.fijoDelTecnico && previo) nota = "Es el tuyo, no cambia. Tócalo solo si te lo cambiaron.";
+      else if(c.escaneable) nota = motivoSinEscaner();
+      pista(c.k, nota);
     });
     if(!leerCampo("acometida")) ponerCampo("acometida", "AEREO");
     qs("f-nfibra").value = siguienteNFibra();
