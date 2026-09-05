@@ -188,6 +188,13 @@
   .steps b{color:var(--text)}
   .steps code{font-family:"IBM Plex Mono",monospace;color:var(--accent);font-size:12px}
 
+  h3.semana{font-size:19px;margin:22px 0 10px;display:flex;align-items:baseline;
+    gap:10px;flex-wrap:wrap;border-bottom:1px solid var(--line);padding-bottom:7px}
+  h3.semana:first-child{margin-top:4px}
+  h3.semana small{font-family:"IBM Plex Mono",monospace;font-size:11.5px;font-weight:500;
+    color:var(--muted);letter-spacing:.02em}
+  .pill.ya{background:var(--ok-soft);color:var(--ok)}
+
   .orden{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius-card);
     padding:12px 15px;margin-bottom:11px;display:flex;justify-content:space-between;
     align-items:center;gap:12px;flex-wrap:wrap}
@@ -603,7 +610,8 @@
 
   // -------------------------------------------------------------- estado ---
 
-  var STATE = { entries:[], tecnicos:[], catalogos:{}, indice:[] };
+  var STATE = { entries:[], tecnicos:[], catalogos:{}, indice:[],
+                mias:null, siguiente:null, semActual:"", semAnterior:"" };
   var EDITANDO = null;   // id de la orden que se está corrigiendo
   var ORDEN_ACTUAL = null;
 
@@ -680,8 +688,11 @@
   }
 
   function fetchList(full){
-    return fetch(WEBAPP_URL + "?action=list" + (full ? "&full=1" : ""))
-      .then(function(r){ return r.json(); });
+    var q = "?action=list" + (full ? "&full=1" : "");
+    // Con el técnico, el guardado devuelve además SUS órdenes de dos semanas y
+    // el número que le toca. Se filtra allá para no mandarle las de los demás.
+    if(TECNICO) q += "&tec=" + encodeURIComponent(TECNICO);
+    return fetch(WEBAPP_URL + q).then(function(r){ return r.json(); });
   }
 
   function refreshList(full){
@@ -692,6 +703,10 @@
       STATE.tecnicos = d.tecnicos || [];
       STATE.catalogos = d.catalogos || {};
       if(d.indice) STATE.indice = d.indice;
+      STATE.mias      = Array.isArray(d.mias) ? d.mias : null;
+      STATE.siguiente = (typeof d.siguiente === "number") ? d.siguiente : null;
+      STATE.semActual = d.semanaActual || "";
+      STATE.semAnterior = d.semanaAnterior || "";
       // El guardado viejo mandaba nombres sueltos; el nuevo manda fichas.
       if(Array.isArray(d.tecnicos) && d.tecnicos.length && d.tecnicos[0] && d.tecnicos[0].nombre){
         TECNICOS = d.tecnicos;
@@ -1071,6 +1086,9 @@
   var N_SUGERIDO = 0;
 
   function siguienteNFibra(){
+    // Lo dice el guardado, que ve TODA la semana incluida la parte archivada.
+    // El cálculo de abajo es solo el respaldo de cuando aún no ha contestado.
+    if(STATE.siguiente){ N_SUGERIDO = STATE.siguiente; return N_SUGERIDO; }
     var semana = lunesDe(hoyDDMMYYYY()), max = 0;
     todasConocidas().forEach(function(e){
       if(nombreCanonico(e.tecnico) !== TECNICO) return;
@@ -1282,10 +1300,17 @@
     });
   }
 
+  function buscarOrden(id){
+    var lista = mias().concat(STATE.entries);
+    for(var i = 0; i < lista.length; i++) if(lista[i].id === id) return lista[i];
+    return null;
+  }
+
   function editarOrden(id){
-    var e = STATE.entries.filter(function(x){ return x.id === id; })[0];
+    var e = buscarOrden(id);
     if(!e) return;
     if(nombreCanonico(e.tecnico) !== TECNICO){ toast("Esa orden no es tuya.", true); return; }
+    if(e.copiada){ toast("Esa orden ya se pasó al Excel: no se puede corregir.", true); return; }
     EDITANDO = id;
     ORDEN_ACTUAL = null;
     qs("f-nfibra").value = e.nFibra || 1;
@@ -1336,12 +1361,44 @@
   }
 
   function mias(){
+    if(STATE.mias) return STATE.mias;
+    // Respaldo mientras el guardado no ha contestado, o si es una versión vieja.
     return STATE.entries.filter(function(e){ return nombreCanonico(e.tecnico) === TECNICO; });
+  }
+
+  /** "L2026-08-31" -> "31/08 al 06/09" */
+  function rangoSemana(clave){
+    var m = String(clave || "").match(/^L(\d{4})-(\d{2})-(\d{2})$/);
+    if(!m) return "";
+    var lun = new Date(+m[1], +m[2]-1, +m[3]);
+    var dom = new Date(lun.getFullYear(), lun.getMonth(), lun.getDate()+6);
+    return dosDig(lun.getDate())+"/"+dosDig(lun.getMonth()+1) + " al " +
+           dosDig(dom.getDate())+"/"+dosDig(dom.getMonth()+1);
+  }
+
+  function tarjetaOrden(e, editable){
+    var marcas =
+      (e.materialOk ? "" : ' <span class="pill falta">falta material</span>') +
+      (e.copiada ? ' <span class="pill ya">ya pasó al Excel</span>' : "");
+    return '<div class="orden"><div class="datos">' +
+      '<div class="l1">' + e.nFibra + 'FIBRA · folio ' + esc(e.folio) + marcas + '</div>' +
+      '<div class="l2">' + esc(e.cliente || "—") + ' · ' + esc(e.fecha) +
+      ' · ' + esc(e.metraje) + ' m ' + esc(e.acometida) +
+      (e.celReferencia ? ' · cel ref. ' + esc(e.celReferencia) : '') + '</div></div>' +
+      '<div class="acciones">' +
+      '<button class="mini" data-wa="'+e.id+'">Copiar WhatsApp</button>' +
+      (editable ? '<button class="mini" data-edit="'+e.id+'">Corregir</button>' : '') +
+      '</div></div>';
   }
 
   function renderMias(){
     var lista = mias();
-    qs("n-mias").textContent = lista.length;
+    // Solo se corrige lo de esta semana: una orden de la semana pasada ya se
+    // pegó en su Excel, y cambiarla aquí dejaría los dos sin coincidir.
+    var estaSemana  = lista.filter(function(e){ return e.semanaEs !== "anterior"; });
+    var semanaPasada = lista.filter(function(e){ return e.semanaEs === "anterior"; });
+
+    qs("n-mias").textContent = estaSemana.length;
     qs("n-todas").textContent = STATE.entries.length;
     var body = qs("mias-body");
     if(!lista.length){
@@ -1349,24 +1406,26 @@
         'Las que guardes aparecen aquí y las puedes corregir.</div>';
       return;
     }
-    body.innerHTML = lista.map(function(e){
-      var falta = e.materialOk ? "" : '<span class="pill falta">falta material</span>';
-      return '<div class="orden"><div class="datos">' +
-        '<div class="l1">' + e.nFibra + 'FIBRA · folio ' + esc(e.folio) + ' ' + falta + '</div>' +
-        '<div class="l2">' + esc(e.cliente || "—") + ' · ' + esc(e.fecha) +
-        ' · ' + esc(e.metraje) + ' m ' + esc(e.acometida) +
-        (e.celReferencia ? ' · cel ref. ' + esc(e.celReferencia) : '') + '</div></div>' +
-        '<div class="acciones">' +
-        '<button class="mini" data-wa="'+e.id+'">Copiar WhatsApp</button>' +
-        '<button class="mini" data-edit="'+e.id+'">Corregir</button>' +
-        '</div></div>';
-    }).join("");
+    var html = "";
+    if(estaSemana.length){
+      html += '<h3 class="semana">Esta semana <small>' +
+              esc(rangoSemana(STATE.semActual)) + ' · ' + estaSemana.length + '</small></h3>' +
+              estaSemana.map(function(e){ return tarjetaOrden(e, true); }).join("");
+    }
+    if(semanaPasada.length){
+      html += '<h3 class="semana">Semana anterior <small>' +
+              esc(rangoSemana(STATE.semAnterior)) + ' · ' + semanaPasada.length + '</small></h3>' +
+              '<p class="note" style="text-align:left;margin:0 0 10px">Estas ya se pasaron al ' +
+              'Excel. Se pueden consultar y volver a copiar, pero no corregir.</p>' +
+              semanaPasada.map(function(e){ return tarjetaOrden(e, false); }).join("");
+    }
+    body.innerHTML = html;
     body.querySelectorAll("[data-edit]").forEach(function(b){
       b.addEventListener("click", function(){ editarOrden(b.dataset.edit); });
     });
     body.querySelectorAll("[data-wa]").forEach(function(b){
       b.addEventListener("click", function(){
-        var e = STATE.entries.filter(function(x){ return x.id === b.dataset.wa; })[0];
+        var e = buscarOrden(b.dataset.wa);
         if(e) copyText(mensajeWhatsApp(e), b);
       });
     });

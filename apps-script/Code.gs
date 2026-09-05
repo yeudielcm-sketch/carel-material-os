@@ -161,7 +161,7 @@ function addTecnico(body) {
 function doGet(e) {
   var p = (e && e.parameter) || {};
   var action = p.action || "list";
-  if (action === "list") return respond(listEntries(p.full === "1"));
+  if (action === "list") return respond(listEntries(p.full === "1", p.tec));
   return respond({ error: "unknown_action" });
 }
 
@@ -252,11 +252,20 @@ function filaAObjeto(r) {
   return o;
 }
 
-function listEntries(full) {
+function listEntries(full, tec) {
   var sh = getSheet();
   podarSiTocaHoy(sh);
   var values = leerTodo(sh);
   var entries = [], indice = [], tecs = {}, cuenta = {};
+
+  // Lo del técnico que abre la app: sus órdenes de la semana en curso y la
+  // anterior, ESTÉN O NO archivadas, y el número que le toca. Se filtra aquí y
+  // no en el teléfono para no mandarle las de los demás.
+  var quien   = clean(tec).toUpperCase();
+  var semAct  = semanaActual();
+  var semAnt  = semanaAnterior();
+  var mias    = [];
+  var siguiente = 1;
 
   CON_LISTA.forEach(function (k) { cuenta[k] = {}; });
 
@@ -279,7 +288,24 @@ function listEntries(full) {
                    String(r[idx("ID")])]);
     }
 
-    if (String(r[idx("Copiada")])) continue; // archivada: fuera de la vista
+    if (quien && String(r[idx("Tecnico")]).toUpperCase() === quien) {
+      var sem = String(r[idx("Semana")]);
+      // El siguiente número sale de TODA la semana, archivada o no. Antes lo
+      // calculaba el teléfono con lo que hubiera descargado, y si esa descarga
+      // fallaba proponía 1.
+      if (sem === semAct) {
+        var n = num(r[idx("NFibra")]);
+        if (n >= siguiente) siguiente = n + 1;
+      }
+      if (sem === semAct || sem === semAnt) {
+        var mia = filaAObjeto(r);
+        mia.copiada  = !!String(r[idx("Copiada")]);
+        mia.semanaEs = (sem === semAct) ? "actual" : "anterior";
+        mias.push(mia);
+      }
+    }
+
+    if (String(r[idx("Copiada")])) continue; // archivada: fuera del consolidado
     entries.push(filaAObjeto(r));
   }
 
@@ -291,6 +317,12 @@ function listEntries(full) {
   var out = { entries: entries, tecnicos: fichas,
               tecnicosConDatos: Object.keys(tecs),
               catalogos: catalogos(cuenta) };
+  if (quien) {
+    out.mias = mias;
+    out.siguiente = siguiente;
+    out.semanaActual = semAct;
+    out.semanaAnterior = semAnt;
+  }
   if (full) out.indice = indice;
   return out;
 }
@@ -480,14 +512,26 @@ function mismoTecnico(fila, tecnico) {
  * El consecutivo "N FIBRA" es por técnico y se reinicia el lunes, así que la
  * semana se identifica por la fecha del lunes que la abre.
  */
-function semanaDe(fechaStr) {
-  var d = parseFecha(fechaStr);
-  if (!d) d = new Date();
+function semanaDeFecha(d) {
   var dow = d.getDay();                 // 0 domingo ... 6 sábado
   var atras = (dow === 0) ? 6 : dow - 1;
   var lunes = new Date(d.getFullYear(), d.getMonth(), d.getDate() - atras);
   return "L" + lunes.getFullYear() + "-" +
          dosDigitos(lunes.getMonth() + 1) + "-" + dosDigitos(lunes.getDate());
+}
+
+function semanaDe(fechaStr) {
+  var d = parseFecha(fechaStr);
+  if (!d) d = new Date();
+  return semanaDeFecha(d);
+}
+
+function semanaActual() { return semanaDeFecha(new Date()); }
+
+function semanaAnterior() {
+  var d = new Date();
+  d.setDate(d.getDate() - 7);
+  return semanaDeFecha(d);
 }
 
 function siguienteNFibra(values, tecnico, semana) {
