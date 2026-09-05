@@ -1,0 +1,17 @@
+{
+  "name": "Reporte de OS · CAREL",
+  "short_name": "Reporte OS",
+  "description": "Captura de órdenes de servicio y material de fibra óptica.",
+  "lang": "es",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#f5f6ee",
+  "theme_color": "#5c6b1f",
+  "icons": [
+    { "src": "icono-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icono-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icono-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

@@ -4,6 +4,13 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
 <title>Reporte de OS</title>
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#5c6b1f">
+<link rel="icon" href="icono-192.png" sizes="192x192" type="image/png">
+<link rel="apple-touch-icon" href="icono-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Reporte OS">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@600;700;800&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
@@ -43,8 +50,9 @@
     letter-spacing:.2px; text-wrap:balance; margin:0}
   .mono{font-family:"IBM Plex Mono",ui-monospace,monospace; font-variant-numeric:tabular-nums}
 
-  .topbar{max-width:980px;margin:0 auto;padding:16px 18px 0}
-  .topbar .brand{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+  .topbar{max-width:980px;margin:0 auto;padding:16px 18px 0;position:relative}
+  .topbar .brand{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;
+    padding-right:92px}   /* el hueco del boton Instalar, que va por encima */
   .topbar h1{font-size:25px;color:var(--text)}
   .topbar .brand small{font-family:"IBM Plex Mono",monospace;font-size:11px;letter-spacing:.08em;
     text-transform:uppercase;color:var(--accent);background:var(--accent-soft);
@@ -55,6 +63,12 @@
 
   .tabs{max-width:980px;margin:14px auto 0;padding:0 18px;display:flex;gap:4px;
     border-bottom:1px solid var(--line);overflow-x:auto}
+  .instalar{appearance:none;font-family:inherit;font-size:12.5px;font-weight:600;
+    background:var(--accent-soft);color:var(--accent);border:1px solid var(--accent);
+    border-radius:999px;padding:6px 13px;cursor:pointer;white-space:nowrap;
+    position:absolute;top:15px;right:18px}
+  .instalar:active{transform:translateY(1px)}
+
   .tab{appearance:none;border:none;background:none;color:var(--muted);font-family:inherit;
     font-size:14px;font-weight:600;padding:10px 2px;margin-right:16px;cursor:pointer;
     border-bottom:2.5px solid transparent;white-space:nowrap}
@@ -260,6 +274,7 @@
     <h1>Reporte de OS</h1>
     <small>FTTH &middot; CAREL</small>
   </div>
+  <button class="instalar" id="btn-instalar" type="button" hidden>Instalar</button>
   <div id="tecnico-chip-wrap"></div>
 </div>
 
@@ -331,8 +346,10 @@
 <!-- ===================== MIS ORDENES ===================== -->
 <main class="view" id="view-mias" hidden>
   <div class="steps">
-    <b>Tus &oacute;rdenes de esta semana.</b> Puedes corregir cualquiera &mdash; se vuelve a abrir en el
-    formulario con todo lo que capturaste. Solo ves y editas las tuyas.
+    <b>Tus &oacute;rdenes de esta semana y de la anterior.</b> Solo ves las tuyas.
+    Las que a&uacute;n no han pasado al Excel se corrigen: se vuelven a abrir en el
+    formulario con todo lo que capturaste. Las dem&aacute;s se consultan y se
+    vuelven a copiar.
   </div>
   <div id="mias-body"></div>
 </main>
@@ -618,6 +635,11 @@
   var params = new URLSearchParams(location.search);
   var TECNICO = nombreCanonico(params.get("tec")
               || (function(){ try{ return localStorage.getItem("carel_tecnico")||""; }catch(e){ return ""; } })());
+  // Al instalarse, la app abre en "./" y pierde el ?tec= del enlace. Por eso el
+  // nombre se guarda en cuanto entran por su enlace, no solo cuando lo teclean.
+  if(params.get("tec") && TECNICO){
+    try{ localStorage.setItem("carel_tecnico", TECNICO); }catch(e){}
+  }
 
   // El consolidado es de quien arma el Excel, no de los técnicos: ellos no
   // exportan nada. Solo aparece con ?admin=Supervisor al final del enlace.
@@ -1769,11 +1791,82 @@
   }
   var VIENDO = "reportar";
 
+  // ------------------------------------------------------ instalar app ---
+
+  // Chrome avisa cuando la puede instalar y hay que guardarse ese aviso: es la
+  // ÚNICA forma de abrir el diálogo después, cuando el técnico toque el botón.
+  var PROMPT_INSTALAR = null;
+
+  function yaInstalada(){
+    try{
+      return matchMedia("(display-mode: standalone)").matches ||
+             navigator.standalone === true;
+    }catch(e){ return false; }
+  }
+
+  /** Qué hacer a mano, según dónde esté abierta la página. */
+  function comoInstalar(){
+    var ua = navigator.userAgent || "";
+    // El navegador de dentro de WhatsApp no instala nada, y además no da cámara.
+    if(/\bwv\b/.test(ua) || /FBAN|FBAV|Instagram|Line\//.test(ua)){
+      return "Este enlace se abrió dentro de otra aplicación. Toca el menú de " +
+             "los tres puntos y elige «Abrir en el navegador»; desde Chrome sí " +
+             "se puede instalar.";
+    }
+    if(/iPad|iPhone|iPod/.test(ua)){
+      return "En el iPhone: toca el botón de Compartir (el cuadrito con la " +
+             "flecha) y luego «Añadir a pantalla de inicio».";
+    }
+    return "Toca el menú de los tres puntos del navegador y elige «Instalar " +
+           "aplicación» o «Agregar a pantalla principal».";
+  }
+
+  function instalarApp(){
+    if(PROMPT_INSTALAR){
+      PROMPT_INSTALAR.prompt();
+      PROMPT_INSTALAR.userChoice.then(function(r){
+        PROMPT_INSTALAR = null;
+        if(r && r.outcome === "accepted") qs("btn-instalar").hidden = true;
+      }).catch(function(){});
+      return;
+    }
+    qs("banner-top").innerHTML = banner("ok", comoInstalar());
+  }
+
+  function prepararInstalacion(){
+    var b = qs("btn-instalar");
+    if(!b) return;
+    if(yaInstalada()) return;                     // ya la tiene: sin botón
+
+    b.addEventListener("click", instalarApp);
+    b.hidden = false;
+
+    window.addEventListener("beforeinstallprompt", function(e){
+      e.preventDefault();                          // el diálogo lo abrimos nosotros
+      PROMPT_INSTALAR = e;
+      b.hidden = false;
+    });
+    window.addEventListener("appinstalled", function(){
+      PROMPT_INSTALAR = null;
+      b.hidden = true;
+      toast("Ya quedó en tu pantalla de inicio.");
+    });
+
+    // Sin él, el teléfono no ofrece instalar. Guarda además el lector de
+    // códigos, que son 328 KB que no tienen por qué bajarse dos veces.
+    // navigator.serviceWorker solo existe en un origen seguro, asi que esa
+    // comprobacion basta: en http sin cifrar ni siquiera esta.
+    if("serviceWorker" in navigator){
+      navigator.serviceWorker.register("sw.js").catch(function(){});
+    }
+  }
+
   // -------------------------------------------------------------- boot ---
 
   function boot(){
     renderMatGrid();
     renderTecnicoChip();
+    prepararInstalacion();
 
     if(!ADMIN){
       var tabCons = document.querySelector('[data-tab="consolidado"]');
