@@ -50,9 +50,10 @@
     letter-spacing:.2px; text-wrap:balance; margin:0}
   .mono{font-family:"IBM Plex Mono",ui-monospace,monospace; font-variant-numeric:tabular-nums}
 
-  /* El logo va pegado a la izquierda y ocupa el alto del marco entero:
-     titulo, tecnico y pestanas. Por eso la barra y las pestanas viven dentro
-     de una columna, y el ancho maximo se aplica aqui y no en cada una. */
+  /* El logo va a la derecha —el nombre pesa a la izquierda— y ocupa el alto
+     del marco entero: titulo, tecnico y pestanas. Por eso la barra y las
+     pestanas viven dentro de una columna, y el ancho maximo se aplica aqui y
+     no en cada una. */
   .cabecera{max-width:980px;margin:0 auto;padding:14px 18px 0;
     display:flex;align-items:stretch;gap:14px}
   .cabecera__col{flex:1 1 auto;min-width:0;position:relative}
@@ -286,7 +287,6 @@
 </head>
 <body>
 <header class="cabecera">
-  <img class="logo" src="logo-carel.png" alt="CAREL" width="240" height="238">
   <div class="cabecera__col">
     <div class="topbar">
       <div class="brand">
@@ -301,6 +301,7 @@
       <button class="tab" data-tab="consolidado" type="button">Consolidado <span class="n" id="n-todas">0</span></button>
     </nav>
   </div>
+  <img class="logo" src="logo-carel.png" alt="CAREL" width="240" height="238">
 </header>
 
 <!-- Aparece solo mientras no la tengan instalada. -->
