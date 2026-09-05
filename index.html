@@ -67,6 +67,9 @@
     background:var(--accent-soft);color:var(--accent);border:1px solid var(--accent);
     border-radius:999px;padding:6px 13px;cursor:pointer;white-space:nowrap;
     position:absolute;top:15px;right:18px}
+  /* De un toque: se pinta relleno. Sin el aviso del navegador el botón solo
+     explica cómo hacerlo a mano, y se queda discreto. */
+  [data-instalable] .instalar{background:var(--accent);color:var(--accent-ink)}
   .instalar:active{transform:translateY(1px)}
 
   .tab{appearance:none;border:none;background:none;color:var(--muted);font-family:inherit;
@@ -1845,6 +1848,9 @@
       e.preventDefault();                          // el diálogo lo abrimos nosotros
       PROMPT_INSTALAR = e;
       b.hidden = false;
+      // Queda dicho en el documento: sirve para el estilo y para saber, desde
+      // fuera, si este teléfono la instala de un toque o hay que explicarle.
+      document.documentElement.setAttribute("data-instalable", "1");
     });
     window.addEventListener("appinstalled", function(){
       PROMPT_INSTALAR = null;
