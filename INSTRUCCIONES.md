@@ -88,11 +88,11 @@ navegador mientras no cierren la pestaña.
 https://yeudielcm-sketch.github.io/carel-material-os/?admin=Supervisor
 ```
 
-Solo ese enlace muestra la pestaña **Consolidado**, con los botones de copiado y
+Solo ese enlace muestra la pestaña **Módulo de Administrador**, con los botones de copiado y
 el de archivar. Los técnicos no exportan nada, así que no la ven ni por error. **Conviene repartir el enlace con
 `?tec=`**: en el Excel de 2026 la misma persona aparece escrita de tres formas
 distintas (`MARVIN ALEXIS MARTINEZ`, `ALEXIS MARTINEZ`, `MARVIN ALEXIS MARTINEZ
-CALVO`), y eso parte el consolidado en tres bloques.
+CALVO`), y eso parte el corte en tres bloques.
 
 ## Cuando cambia `Code.gs`
 
@@ -104,11 +104,15 @@ Implementar**. La URL no cambia, así que no hay que volver a repartir enlaces.
 
 - Los datos quedan en la Hoja, pestaña **«Reportes»**, y se pueden abrir en
   cualquier momento.
-- **Nada se borra.** «Archivar este bloque» escribe la fecha en la columna
-  `Copiada` y la orden desaparece de la app, pero la fila se queda. Es a
-  propósito: al Excel semanal solo llegan 7 de los 22 campos del mensaje, así
-  que esta hoja es el único lugar donde vive el resto.
-- El consolidado se refresca cada 20 segundos **solo cuando está a la vista**.
+- **Archivar no borra en el acto.** «Archivar este bloque» escribe la fecha en
+  la columna `Copiada` y la orden desaparece de la app, pero la fila se queda.
+  Es a propósito: al Excel semanal solo llegan 7 de los 22 campos del mensaje,
+  así que esta hoja es el único lugar donde vive el resto. Eso sí, **pasadas
+  ocho semanas la fila archivada se borra sola** (`SEMANAS_HISTORIAL` en
+  `Code.gs`): para entonces el reporte ya vive en su Excel y en el chat de
+  WhatsApp.
+- El módulo de administrador se refresca cada 20 segundos **solo cuando está a
+  la vista**.
   Con el formulario abierto en la calle no gasta señal ni cuota.
 - Cada técnico solo ve y corrige **sus** órdenes en la pestaña «Mis órdenes».
 - Quien tenga la URL `/exec` puede escribir en la Hoja sin identificarse — es la

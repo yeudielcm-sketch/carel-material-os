@@ -194,7 +194,6 @@
   td.num{font-family:"IBM Plex Mono",monospace;text-align:right}
   td.folio{font-family:"IBM Plex Mono",monospace;color:var(--muted)}
   tr.pendiente td{background:var(--warn-soft)}
-  tr.corregida td:first-child{box-shadow:inset 4px 0 0 var(--warn)}
   .pill{display:inline-block;font-size:10.5px;font-weight:700;padding:1px 7px;border-radius:20px;
     font-family:"IBM Plex Mono",monospace}
   .pill.falta{background:var(--warn-soft);color:var(--warn)}
@@ -303,7 +302,7 @@
     <nav class="tabs">
       <button class="tab active" data-tab="reportar" type="button">Nueva orden</button>
       <button class="tab" data-tab="mias" type="button">Mis &oacute;rdenes <span class="n" id="n-mias">0</span></button>
-      <button class="tab" data-tab="consolidado" type="button">Consolidado <span class="n" id="n-todas">0</span></button>
+      <button class="tab" data-tab="consolidado" type="button">M&oacute;dulo de Administrador <span class="n" id="n-todas">0</span></button>
     </nav>
   </div>
   <img class="logo" src="logo-carel.png" alt="CAREL" width="240" height="238">
@@ -385,7 +384,7 @@
   <div id="mias-body"></div>
 </main>
 
-<!-- ===================== CONSOLIDADO ===================== -->
+<!-- ================ MODULO DE ADMINISTRADOR ================ -->
 <main class="view" id="view-consolidado" hidden>
   <div class="steps">
     <b>C&oacute;mo pasar esto al Excel</b> (hoja <code>MAT UTILIZADO</code>): abre el archivo del corte
@@ -672,16 +671,17 @@
     try{ localStorage.setItem("carel_tecnico", TECNICO); }catch(e){}
   }
 
-  // El consolidado es de quien arma el Excel, no de los técnicos: ellos no
+  // El módulo de administrador es de quien arma el Excel, no de los técnicos:
+  // ellos no
   // exportan nada. Solo aparece con ?admin=Supervisor al final del enlace.
   // No es seguridad —la palabra viaja en la URL y está en este archivo—, pero
   // deja de encontrarse por casualidad, que era lo que pasaba con "1".
   // Sin distinguir mayúsculas, para que no falle por cómo lo teclee el teléfono.
   var ADMIN = String(params.get("admin") || "").toLowerCase() === "supervisor";
   // Quien entra como administrador y no se identifica como técnico no captura
-  // órdenes: solo copia y archiva. Se le deja únicamente el Consolidado.
+  // órdenes: solo copia y archiva. Se le deja únicamente ese módulo.
   var SOLO_ADMIN = ADMIN && !params.get("tec");
-  // Plaza que se está mirando en el consolidado. Con una sola no se nota.
+  // Plaza que se está mirando en el módulo. Con una sola no se nota.
   var COPE_VISTA = normName(params.get("cope") || "");
 
   var configured = WEBAPP_URL && WEBAPP_URL.indexOf("PEGA_AQUI") === -1;
@@ -1426,14 +1426,13 @@
   }
 
   /**
-   * Si la orden se toco despues de guardarla: "" cuando nadie la ha corregido,
-   * "tras-copia" cuando la correccion llego DESPUES de pegarla en el Excel
-   * —ese archivo se armo con lo de antes— y "si" en los demas casos.
-   * Los dos sellos vienen con el mismo formato, asi que se comparan tal cual.
+   * Verdadero solo si la correccion llego DESPUES de pegar la orden en el
+   * Excel: ese archivo se armo con lo de antes y hay que hacer algo aparte.
+   * Lo corregido antes de copiarse NO se marca —se copia ya corregido, no hay
+   * nada que avisar—. Los dos sellos traen el mismo formato: se comparan tal cual.
    */
-  function correccion(e){
-    if(!e || !e.editada) return "";
-    return (e.copiada && e.editada > e.copiada) ? "tras-copia" : "si";
+  function corregidaTrasCopia(e){
+    return !!(e && e.editada && e.copiada && e.editada > e.copiada);
   }
 
   /** "2026-09-05 17:40" -> "05/09 a las 17:40" */
@@ -1453,14 +1452,12 @@
   }
 
   function tarjetaOrden(e, editable){
-    var corr = correccion(e);
-    var cuando = cuandoSeCorrigio(e.editada);
+    var corr = corregidaTrasCopia(e);
     var marcas =
       (e.materialOk ? "" : ' <span class="pill falta">falta material</span>') +
       (e.copiada ? ' <span class="pill ya">ya pasó al Excel</span>' : "") +
-      (corr ? ' <span class="pill corr" title="Corregida el ' + esc(cuando) + '">' +
-              (corr === "tras-copia" ? "corregida después de copiar" : "corregida") +
-              '</span>' : "");
+      (corr ? ' <span class="pill corr" title="Corregida el ' +
+              esc(cuandoSeCorrigio(e.editada)) + '">corregida después de copiar</span>' : "");
     return '<div class="orden' + (corr ? ' corregida' : '') + '"><div class="datos">' +
       '<div class="l1">' + e.nFibra + 'FIBRA · folio ' + esc(e.folio) + marcas + '</div>' +
       '<div class="l2">' + esc(e.cliente || "—") + ' · ' + esc(e.fecha) +
@@ -1719,16 +1716,10 @@
       var dupF = otras("folio", e.folio).length;
       var dupT = otras("telefono", e.telefono).filter(function(p){
         return sinCeros(p.folio) !== sinCeros(e.folio); }).length;
-      // Quien arma el Excel tiene que ver cual se toco despues de capturarse:
-      // si esa fila ya se pego en un archivo, ese archivo trae lo de antes.
-      var corr = correccion(e);
       var avisos = (dupF ? ' <span class="pill dup">folio repetido</span>' : '') +
                    (dupT ? ' <span class="pill dup">tel repetido</span>' : '') +
-                   (e.materialOk ? '' : ' <span class="pill falta">sin material</span>') +
-                   (corr ? ' <span class="pill corr" title="Corregida el ' +
-                           esc(cuandoSeCorrigio(e.editada)) + '">corregida</span>' : '');
-      var clases = (e.materialOk ? '' : 'pendiente') + (corr ? ' corregida' : '');
-      return '<tr'+(clases.trim() ? ' class="'+clases.trim()+'"' : '')+'><td class="mono">'+(i+1)+'</td>' +
+                   (e.materialOk ? '' : ' <span class="pill falta">sin material</span>');
+      return '<tr'+(e.materialOk?'':' class="pendiente"')+'><td class="mono">'+(i+1)+'</td>' +
         '<td class="folio">'+esc(sinCeros(e.folio))+avisos+'</td>' +
         '<td class="mono">'+esc(e.fecha)+'</td>' +
         '<td class="mono">'+esc(e.metraje)+'</td>' +
