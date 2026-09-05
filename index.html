@@ -373,9 +373,9 @@
 <main class="view" id="view-mias" hidden>
   <div class="steps">
     <b>Tus &oacute;rdenes de esta semana y de la anterior.</b> Solo ves las tuyas.
-    Las que a&uacute;n no han pasado al Excel se corrigen: se vuelven a abrir en el
-    formulario con todo lo que capturaste. Las dem&aacute;s se consultan y se
-    vuelven a copiar.
+    Cualquiera de esta semana se corrige: se vuelve a abrir en el formulario con
+    todo lo que capturaste. Las de la semana pasada se consultan y se vuelven a
+    copiar, pero ya no se cambian.
   </div>
   <div id="mias-body"></div>
 </main>
@@ -1358,7 +1358,9 @@
     var e = buscarOrden(id);
     if(!e) return;
     if(nombreCanonico(e.tecnico) !== TECNICO){ toast("Esa orden no es tuya.", true); return; }
-    if(e.copiada){ toast("Esa orden ya se pasó al Excel: no se puede corregir.", true); return; }
+    if(e.semanaEs === "anterior"){
+      toast("Esa orden es de la semana pasada: ya está cerrada.", true); return;
+    }
     EDITANDO = id;
     ORDEN_ACTUAL = null;
     qs("f-nfibra").value = e.nFibra || 1;
@@ -1367,7 +1369,11 @@
     qs("titulo-paso1").textContent = "Corrigiendo el folio " + e.folio;
     irAPaso(1);
     activarTab("reportar");
-    toast("Corrige lo que haga falta y vuelve a generar.");
+    // Toda la semana en curso se corrige, se haya copiado o no. Si ya se copió,
+    // el archivo se armó con lo de antes, y eso hay que decirlo.
+    toast(e.copiada
+      ? "Esta ya se pasó al Excel: avisa que la corregiste."
+      : "Corrige lo que haga falta y vuelve a generar.");
   }
 
   // ------------------------------------------------------------- render ---
@@ -1435,17 +1441,14 @@
       (e.celReferencia ? ' · cel ref. ' + esc(e.celReferencia) : '') + '</div></div>' +
       '<div class="acciones">' +
       '<button class="mini" data-wa="'+e.id+'">Copiar WhatsApp</button>' +
-      // Una orden ya copiada tampoco se corrige, aunque sea de esta semana: el
-      // Excel ya se guardo con lo de antes. Antes salia el boton y luego decia
-      // que no; mejor que no salga.
-      (editable && !e.copiada ? '<button class="mini" data-edit="'+e.id+'">Corregir</button>' : '') +
+      (editable ? '<button class="mini" data-edit="'+e.id+'">Corregir</button>' : '') +
       '</div></div>';
   }
 
   function renderMias(){
     var lista = mias();
-    // Solo se corrige lo de esta semana: una orden de la semana pasada ya se
-    // pegó en su Excel, y cambiarla aquí dejaría los dos sin coincidir.
+    // La semana en curso se corrige entera. La pasada ya se cerró con su
+    // archivo, y cambiarla aquí dejaría los dos sin coincidir.
     var estaSemana  = lista.filter(function(e){ return e.semanaEs !== "anterior"; });
     var semanaPasada = lista.filter(function(e){ return e.semanaEs === "anterior"; });
 
@@ -1466,8 +1469,8 @@
     if(semanaPasada.length){
       html += '<h3 class="semana">Semana anterior <small>' +
               esc(rangoSemana(STATE.semAnterior)) + ' · ' + semanaPasada.length + '</small></h3>' +
-              '<p class="note" style="text-align:left;margin:0 0 10px">Estas ya se pasaron al ' +
-              'Excel. Se pueden consultar y volver a copiar, pero no corregir.</p>' +
+              '<p class="note" style="text-align:left;margin:0 0 10px">Esa semana ya se ' +
+              'cerró con su archivo. Se pueden consultar y volver a copiar, pero no corregir.</p>' +
               semanaPasada.map(function(e){ return tarjetaOrden(e, false); }).join("");
     }
     body.innerHTML = html;
