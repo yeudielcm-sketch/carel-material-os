@@ -1387,7 +1387,10 @@
       (e.celReferencia ? ' · cel ref. ' + esc(e.celReferencia) : '') + '</div></div>' +
       '<div class="acciones">' +
       '<button class="mini" data-wa="'+e.id+'">Copiar WhatsApp</button>' +
-      (editable ? '<button class="mini" data-edit="'+e.id+'">Corregir</button>' : '') +
+      // Una orden ya copiada tampoco se corrige, aunque sea de esta semana: el
+      // Excel ya se guardo con lo de antes. Antes salia el boton y luego decia
+      // que no; mejor que no salga.
+      (editable && !e.copiada ? '<button class="mini" data-edit="'+e.id+'">Corregir</button>' : '') +
       '</div></div>';
   }
 
