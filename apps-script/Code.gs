@@ -40,7 +40,10 @@ var COLS = [
   // Va al final y no junto a Barrio, que es donde le tocaría por contenido:
   // idx() mapea por posición, así que meterla en medio dejaría las órdenes ya
   // guardadas leyéndose con todo corrido una columna.
-  "CelReferencia"
+  "CelReferencia",
+  // Sello de la ultima correccion. Comparado con Copiada dice lo unico que
+  // importa: si se toco DESPUES de haberse pegado en el Excel.
+  "Editada"
 ];
 
 // Campos de la orden: clave que usa la app -> columna de la hoja.
@@ -246,7 +249,9 @@ function leerTodo(sh) {
 function filaAObjeto(r) {
   var o = { id: String(r[idx("ID")]), tecnico: String(r[idx("Tecnico")]),
             nFibra: num(r[idx("NFibra")]), semana: String(r[idx("Semana")]),
-            materialOk: String(r[idx("MaterialOk")]) === "SI" };
+            materialOk: String(r[idx("MaterialOk")]) === "SI",
+            copiada: String(r[idx("Copiada")]),
+            editada: String(r[idx("Editada")]) };
   for (var k in CAMPOS_ORDEN) o[k] = String(r[idx(CAMPOS_ORDEN[k])]);
   for (var m in CAMPOS_MATERIAL) o[m] = num(r[idx(CAMPOS_MATERIAL[m])]);
   return o;
@@ -299,7 +304,6 @@ function listEntries(full, tec) {
       }
       if (sem === semAct || sem === semAnt) {
         var mia = filaAObjeto(r);
-        mia.copiada  = !!String(r[idx("Copiada")]);
         mia.semanaEs = (sem === semAct) ? "actual" : "anterior";
         mias.push(mia);
       }
@@ -425,6 +429,10 @@ function updateOrden(body) {
     fila[idx("NFibra")] = num(body.nFibra);
   }
   if (body.hasOwnProperty("fecha")) fila[idx("Semana")] = semanaDe(clean(body.fecha));
+  // Queda constancia de que se toco. Con el mismo formato que Copiada, para
+  // poder compararlas tal cual y saber cual fue primero.
+  fila[idx("Editada")] = Utilities.formatDate(new Date(),
+    Session.getScriptTimeZone() || "America/Mexico_City", "yyyy-MM-dd HH:mm");
   escribirFila(sh, i + 2, fila);
   return { ok: true };
 }
