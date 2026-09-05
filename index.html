@@ -50,10 +50,20 @@
     letter-spacing:.2px; text-wrap:balance; margin:0}
   .mono{font-family:"IBM Plex Mono",ui-monospace,monospace; font-variant-numeric:tabular-nums}
 
-  .topbar{max-width:980px;margin:0 auto;padding:16px 18px 0;position:relative}
-  .topbar .brand{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;
-    padding-right:92px}   /* el hueco del boton Instalar, que va por encima */
-  .topbar h1{font-size:25px;color:var(--text)}
+  /* El logo va pegado a la izquierda y ocupa el alto del marco entero:
+     titulo, tecnico y pestanas. Por eso la barra y las pestanas viven dentro
+     de una columna, y el ancho maximo se aplica aqui y no en cada una. */
+  .cabecera{max-width:980px;margin:0 auto;padding:14px 18px 0;
+    display:flex;align-items:stretch;gap:14px}
+  .cabecera__col{flex:1 1 auto;min-width:0;position:relative}
+  /* Cuadrado y estirado: alto el del marco entero, y el ancho que le
+     corresponde. En un telefono angosto cede un poco para que quepa el nombre. */
+  .cabecera .logo{align-self:stretch;height:auto;flex:0 0 auto;
+    width:min(126px, 29vw);object-fit:contain}
+
+  .topbar{padding:2px 0 0;position:relative}
+  .topbar .brand{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+  .topbar h1{font-size:clamp(20px, 5.6vw, 25px);color:var(--text)}
   .topbar .brand small{font-family:"IBM Plex Mono",monospace;font-size:11px;letter-spacing:.08em;
     text-transform:uppercase;color:var(--accent);background:var(--accent-soft);
     padding:3px 8px;border-radius:20px}
@@ -61,12 +71,15 @@
   .tecnico-chip b{color:var(--text);font-weight:700}
   .tecnico-chip a.change{color:var(--accent);text-decoration:none;margin-left:8px}
 
-  .tabs{max-width:980px;margin:14px auto 0;padding:0 18px;display:flex;gap:4px;
+  .tabs{margin:12px 0 0;padding:0;display:flex;gap:4px;
     border-bottom:1px solid var(--line);overflow-x:auto}
   .instalar{appearance:none;font-family:inherit;font-size:12.5px;font-weight:600;
     background:var(--accent-soft);color:var(--accent);border:1px solid var(--accent);
     border-radius:999px;padding:6px 13px;cursor:pointer;white-space:nowrap;
-    position:absolute;top:15px;right:18px}
+    flex:0 0 auto}
+  .instalar-fila{max-width:980px;margin:0 auto;padding:12px 18px 0;
+    display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+  .instalar-fila span{font-size:12.5px;color:var(--muted)}
   /* De un toque: se pinta relleno. Sin el aviso del navegador el botón solo
      explica cómo hacerlo a mano, y se queda discreto. */
   [data-instalable] .instalar{background:var(--accent);color:var(--accent-ink)}
@@ -272,20 +285,29 @@
 </style>
 </head>
 <body>
-<div class="topbar">
-  <div class="brand">
-    <h1>Reporte de OS</h1>
-    <small>FTTH &middot; CAREL</small>
+<header class="cabecera">
+  <img class="logo" src="logo-carel.png" alt="CAREL" width="240" height="238">
+  <div class="cabecera__col">
+    <div class="topbar">
+      <div class="brand">
+        <h1>Reporte de OS</h1>
+        <small>FTTH &middot; CAREL</small>
+      </div>
+      <div id="tecnico-chip-wrap"></div>
+    </div>
+    <nav class="tabs">
+      <button class="tab active" data-tab="reportar" type="button">Nueva orden</button>
+      <button class="tab" data-tab="mias" type="button">Mis &oacute;rdenes <span class="n" id="n-mias">0</span></button>
+      <button class="tab" data-tab="consolidado" type="button">Consolidado <span class="n" id="n-todas">0</span></button>
+    </nav>
   </div>
-  <button class="instalar" id="btn-instalar" type="button" hidden>Instalar</button>
-  <div id="tecnico-chip-wrap"></div>
-</div>
+</header>
 
-<nav class="tabs">
-  <button class="tab active" data-tab="reportar" type="button">Nueva orden</button>
-  <button class="tab" data-tab="mias" type="button">Mis &oacute;rdenes <span class="n" id="n-mias">0</span></button>
-  <button class="tab" data-tab="consolidado" type="button">Consolidado <span class="n" id="n-todas">0</span></button>
-</nav>
+<!-- Aparece solo mientras no la tengan instalada. -->
+<div class="instalar-fila" id="fila-instalar" hidden>
+  <span>T&eacute;nla en tu pantalla de inicio, como cualquier otra app.</span>
+  <button class="instalar" id="btn-instalar" type="button">Instalar</button>
+</div>
 
 <!-- ===================== PANTALLA 1 y 2 ===================== -->
 <main class="view" id="view-reportar">
@@ -1829,7 +1851,7 @@
       PROMPT_INSTALAR.prompt();
       PROMPT_INSTALAR.userChoice.then(function(r){
         PROMPT_INSTALAR = null;
-        if(r && r.outcome === "accepted") qs("btn-instalar").hidden = true;
+        if(r && r.outcome === "accepted") qs("fila-instalar").hidden = true;
       }).catch(function(){});
       return;
     }
@@ -1842,19 +1864,19 @@
     if(yaInstalada()) return;                     // ya la tiene: sin botón
 
     b.addEventListener("click", instalarApp);
-    b.hidden = false;
+    qs("fila-instalar").hidden = false;
 
     window.addEventListener("beforeinstallprompt", function(e){
       e.preventDefault();                          // el diálogo lo abrimos nosotros
       PROMPT_INSTALAR = e;
-      b.hidden = false;
+      qs("fila-instalar").hidden = false;
       // Queda dicho en el documento: sirve para el estilo y para saber, desde
       // fuera, si este teléfono la instala de un toque o hay que explicarle.
       document.documentElement.setAttribute("data-instalable", "1");
     });
     window.addEventListener("appinstalled", function(){
       PROMPT_INSTALAR = null;
-      b.hidden = true;
+      qs("fila-instalar").hidden = true;
       toast("Ya quedó en tu pantalla de inicio.");
     });
 
