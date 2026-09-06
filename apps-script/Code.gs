@@ -57,6 +57,28 @@ var CAMPOS_ORDEN = {
   celReferencia: "CelReferencia"
 };
 
+/**
+ * Campos que viajan en la lista COMPARTIDA (`entries`) — la que hoy puede pedir
+ * cualquiera, porque la URL /exec va dentro de la página publicada en GitHub
+ * Pages y ahí no es un secreto.
+ *
+ * Es una lista blanca a propósito: lo que no esté aquí NO sale. Son justo los
+ * que el corte necesita para armar la fila del Excel (BLOQUE_AD en index.html)
+ * y para avisar de folios repetidos.
+ *
+ * Fuera quedan dos grupos. Los que identifican al cliente —nombre, dirección,
+ * barrio, celular de referencia— y los que sencillamente no los usa nadie del
+ * otro lado: NIP, vigencia, autoriza, observaciones, expediente. El NIP no es
+ * dato sensible (es la referencia del cambio de servicio, no una clave), pero
+ * el corte no lo necesita y aquí solo entra lo que se usa.
+ *
+ * Todo eso sigue saliendo completo en `mias`, que ya viene filtrado por técnico
+ * y es de donde el teléfono arma el mensaje de WhatsApp y las correcciones.
+ */
+var CAMPOS_PUBLICOS = ["cope", "folio", "tipoOs", "distrito", "terminal", "puerto",
+                       "telefono", "serie", "modelo", "cv", "metraje", "acometida",
+                       "fecha"];
+
 var CAMPOS_MATERIAL = {
   argollas: "Argollas", taquetes: "Taquetes", roseta: "Roseta", sellos: "Sellos",
   sincho: "Sincho", tensores: "Tensores", sujMarfil: "SujMarfil", ont: "Ont"
@@ -86,6 +108,9 @@ var SEMILLAS = {
 };
 
 // Campos con lista. Los que no tienen semilla se llenan solos con el uso.
+// El NIP sigue aquí: no es un dato bancario ni de acceso, es la referencia de
+// que hubo un cambio de servicio, y ver los más usados le ahorra tecleo al
+// técnico. Por eso tampoco se trata como los datos de identidad del cliente.
 var CON_LISTA = ["cope", "tipoOs", "distrito", "terminal", "puerto", "modelo",
                  "cv", "barrio", "metraje", "observaciones", "autoriza", "nip", "vigencia"];
 
@@ -246,13 +271,25 @@ function leerTodo(sh) {
 
 // ----------------------------------------------------------------- listar ---
 
-function filaAObjeto(r) {
+/**
+ * Pasa una fila a objeto. Con `completo` en true van los 23 campos de la orden
+ * —es lo que ve el técnico de SUS propias órdenes, que las corrige y vuelve a
+ * copiar el mensaje de WhatsApp—. Sin él solo van los de CAMPOS_PUBLICOS.
+ */
+function filaAObjeto(r, completo) {
   var o = { id: String(r[idx("ID")]), tecnico: String(r[idx("Tecnico")]),
             nFibra: num(r[idx("NFibra")]), semana: String(r[idx("Semana")]),
             materialOk: String(r[idx("MaterialOk")]) === "SI",
             copiada: String(r[idx("Copiada")]),
             editada: String(r[idx("Editada")]) };
-  for (var k in CAMPOS_ORDEN) o[k] = String(r[idx(CAMPOS_ORDEN[k])]);
+  if (completo) {
+    for (var k in CAMPOS_ORDEN) o[k] = String(r[idx(CAMPOS_ORDEN[k])]);
+  } else {
+    for (var i = 0; i < CAMPOS_PUBLICOS.length; i++) {
+      var c = CAMPOS_PUBLICOS[i];
+      o[c] = String(r[idx(CAMPOS_ORDEN[c])]);
+    }
+  }
   for (var m in CAMPOS_MATERIAL) o[m] = num(r[idx(CAMPOS_MATERIAL[m])]);
   return o;
 }
@@ -303,14 +340,14 @@ function listEntries(full, tec) {
         if (n >= siguiente) siguiente = n + 1;
       }
       if (sem === semAct || sem === semAnt) {
-        var mia = filaAObjeto(r);
+        var mia = filaAObjeto(r, true);
         mia.semanaEs = (sem === semAct) ? "actual" : "anterior";
         mias.push(mia);
       }
     }
 
     if (String(r[idx("Copiada")])) continue; // archivada: fuera del consolidado
-    entries.push(filaAObjeto(r));
+    entries.push(filaAObjeto(r, false));
   }
 
   // Si algo falla leyendo los técnicos, la captura NO se cae: la app tiene su
@@ -366,7 +403,7 @@ function addOrden(body) {
   if (clave) {
     for (var i = 0; i < values.length; i++) {
       if (String(values[i][idx("ClaveCliente")]) === clave) {
-        var ya = filaAObjeto(values[i]);
+        var ya = filaAObjeto(values[i], true);
         return { ok: true, id: ya.id, nFibra: ya.nFibra, repetida: true };
       }
     }
