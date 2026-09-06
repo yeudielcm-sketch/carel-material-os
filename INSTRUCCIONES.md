@@ -166,6 +166,44 @@ Script se elige la función `prepararAutorizados` y se pulsa *Ejecutar*.
 - Mientras la pestaña esté vacía solo entra el dueño del script, para que pueda
   llenarla sin dejarse fuera a sí mismo.
 
+### Solo capturan los que están dados de alta
+
+**Nadie puede capturar con un nombre que no esté en la pestaña `Tecnicos`.** Ni
+escribiéndolo en el selector, ni metiéndolo en el `?tec=` del enlace, ni
+llamando al `/exec` a mano.
+
+La regla vive en el **servidor** (`tecnicoCanonico` en `Code.gs`), no solo en la
+página. Tenía que ser así: la URL del `/exec` va dentro de la página publicada,
+y un candado que viva únicamente en el teléfono no es una regla, es una
+sugerencia. La página comprueba lo mismo, pero solo para avisar antes de que
+alguien teclee una orden entera para nada.
+
+Los **alias sí valen**, y además se normalizan: si llega `ALEXIS MARTINEZ`, la
+orden se guarda como `MARVIN ALEXIS MARTINEZ`. Así ni siquiera un alias parte el
+corte en dos bloques.
+
+Esto apareció el 6/09/2026. Un enlace repartido con espacios de verdad llegó
+cortado como `?tec=MARVIN`, la app lo aceptó como si fuera alguien nuevo, y de
+haber capturado con él, el corte de la semana habría salido con un bloque de
+más — justo lo que la columna de alias existe para evitar.
+
+### Dar de alta a un técnico nuevo
+
+Se hace desde el **Módulo de Administrador**, y **hay que haber entrado con
+Google**: dar de alta escribe en `Autorizados`, o sea decide quién puede entrar,
+y eso no puede quedar al alcance de cualquiera que conozca la URL. El guardado
+rechaza el alta si quien la pide no es el supervisor.
+
+El formulario pide el **correo de Google** además del nombre. Con una sola
+acción se escriben las dos pestañas: `Tecnicos` (para que pueda capturar) y
+`Autorizados` (para que pueda entrar). Van juntas a propósito: si el correo se
+dejara para después, la persona existiría como técnico pero no podría entrar, y
+se vería como que el acceso está roto.
+
+> **Confirma el correo mirándole el teléfono.** Es el fallo número uno: se
+> apunta uno de memoria y la persona entra con otro. Google dirá correctamente
+> quién es, la lista no lo reconocerá, y no habrá forma de adivinar por qué.
+
 ### La credencial de Google
 
 Está en el proyecto de Google Cloud **`carel-material-de-os`**, app

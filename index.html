@@ -427,6 +427,11 @@
           <input type="text" id="t-cope" autocomplete="off" placeholder="COMITAN"></div>
         <div class="campo"><label for="t-exp">Expediente de COPE</label>
           <input type="text" id="t-exp" class="mono" inputmode="numeric" autocomplete="off"></div>
+        <div class="campo ancho"><label for="t-correo">Correo de Google <span class="req">*</span></label>
+          <input type="email" id="t-correo" inputmode="email" autocomplete="off"
+                 placeholder="el mismo con el que entra en su tel&eacute;fono">
+          <div class="pista">Con este correo entrar&aacute; a la app. Confírmalo mir&aacute;ndole el
+            tel&eacute;fono: si apuntas otro, no podr&aacute; entrar y no sabr&aacute; por qu&eacute;.</div></div>
         <div class="campo ancho"><label for="t-alias">Otras formas en que se escribe su nombre</label>
           <input type="text" id="t-alias" autocomplete="off" placeholder="Opcional, separadas por coma">
           <div class="pista">Sirve para que sus &oacute;rdenes viejas se junten con las nuevas.</div></div>
@@ -685,13 +690,42 @@
   var ORDEN_ACTUAL = null;
 
   var params = new URLSearchParams(location.search);
-  var TECNICO = nombreCanonico(params.get("tec")
-              || (function(){ try{ return localStorage.getItem("carel_tecnico")||""; }catch(e){ return ""; } })());
-  // Al instalarse, la app abre en "./" y pierde el ?tec= del enlace. Por eso el
-  // nombre se guarda en cuanto entran por su enlace, no solo cuando lo teclean.
-  if(params.get("tec") && TECNICO){
-    try{ localStorage.setItem("carel_tecnico", TECNICO); }catch(e){}
+  // El nombre que se PIDIO, sin darlo por bueno todavía.
+  var TEC_PEDIDO = params.get("tec")
+              || (function(){ try{ return localStorage.getItem("carel_tecnico")||""; }catch(e){ return ""; } })();
+  var TECNICO = "";
+  var TEC_RECHAZADO = "";
+
+  /**
+   * REGLA DURA: solo se acepta un nombre que esté dado de alta.
+   *
+   * Antes, un ?tec= con cualquier cosa se tomaba como un técnico nuevo sin
+   * avisar, y lo que se capturara con él salía en el corte como un bloque
+   * aparte. Pasó el 6/09/2026: WhatsApp corta el enlace en el primer espacio y
+   * llegó «MARVIN» a secas.
+   *
+   * El guardado lo rechaza también —esa es la regla de verdad, porque la URL
+   * del /exec es pública—. Esto de aquí es para que se vea el motivo antes de
+   * teclear una orden entera, no al darle a guardar.
+   *
+   * Se reintenta cada vez que llega el padrón: al arrancar solo está la copia
+   * de respaldo, y alguien recién dado de alta no aparecería en ella.
+   *
+   * Al instalarse, la app abre en "./" y pierde el ?tec= del enlace. Por eso el
+   * nombre se guarda en cuanto entran por su enlace, no solo cuando lo teclean.
+   */
+  function resolverTecnico(){
+    if(TECNICO || !TEC_PEDIDO) return;
+    if(fichaTecnico(TEC_PEDIDO)){
+      TECNICO = nombreCanonico(TEC_PEDIDO);
+      TEC_RECHAZADO = "";
+      try{ localStorage.setItem("carel_tecnico", TECNICO); }catch(e){}
+    }else{
+      TEC_RECHAZADO = TEC_PEDIDO;
+      try{ localStorage.removeItem("carel_tecnico"); }catch(e){}
+    }
   }
+  resolverTecnico();
 
   // El módulo de administrador es de quien arma el Excel, no de los técnicos:
   // ellos no
@@ -923,7 +957,10 @@
       // El guardado viejo mandaba nombres sueltos; el nuevo manda fichas.
       if(Array.isArray(d.tecnicos) && d.tecnicos.length && d.tecnicos[0] && d.tecnicos[0].nombre){
         TECNICOS = d.tecnicos;
-        TECNICO = nombreCanonico(TECNICO);
+        if(TECNICO) TECNICO = nombreCanonico(TECNICO);
+        // Con el padrón bueno en la mano se vuelve a intentar: puede que el
+        // nombre rechazado al arrancar sí exista, y solo faltara la lista.
+        resolverTecnico();
       }
       renderTodo();
       // Solo se quita el aviso de conexión. El "Capturado con éxito" tiene que
@@ -1425,7 +1462,17 @@
   function generarReporte(){
     if(SOLO_ADMIN) return;
     if(!TECNICO){
-      TECNICO = nombreCanonico(qs("f-tecnico") ? qs("f-tecnico").value : "");
+      var escrito = qs("f-tecnico") ? qs("f-tecnico").value : "";
+      // La misma regla que con el enlace: un nombre que no está dado de alta no
+      // captura. Si no, se cuela por aquí lo que se bloqueó por allá.
+      TECNICO = fichaTecnico(escrito) ? nombreCanonico(escrito) : "";
+      if(!TECNICO && escrito){
+        qs("banner-top").innerHTML = banner("danger",
+          "«" + esc(escrito) + "» no est&aacute; dado de alta. Elige tu nombre de la lista " +
+          "que sale al tocar el campo, o p&iacute;dele a qui&eacute;n arma el corte que te agregue.");
+        window.scrollTo(0,0);
+        return;
+      }
       if(TECNICO){
         try{ localStorage.setItem("carel_tecnico", TECNICO); }catch(e){}
         renderTecnicoChip();
@@ -1484,7 +1531,10 @@
     }).catch(function(err){
       toast("No se pudo guardar la orden — vuelve a intentar.", true);
       qs("banner-top").innerHTML = banner("danger",
-        "No se guardó: " + err.message + ". El mensaje de WhatsApp ya lo puedes copiar igual.");
+        (err.message === "tecnico_no_dado_de_alta"
+          ? "Ese nombre no est&aacute; dado de alta, y por eso no se guard&oacute;. Avisa a qui&eacute;n arma el corte."
+          : "No se guardó: " + err.message + ".") +
+        " El mensaje de WhatsApp ya lo puedes copiar igual.");
     }).finally(function(){
       btn.disabled = false; btn.textContent = "Siguiente → capturar material";
     });
@@ -1571,7 +1621,11 @@
         renderTecnicoChip();
       });
     } else {
-      wrap.innerHTML = '<div class="tecnico-chip">Escribe tu nombre abajo para empezar.</div>';
+      wrap.innerHTML = TEC_RECHAZADO
+        ? '<div class="tecnico-chip">El enlace trae <b>' + esc(TEC_RECHAZADO) + '</b>, que no ' +
+          'est&aacute; dado de alta. Elige tu nombre abajo. Si el enlace te lleg&oacute; por ' +
+          'WhatsApp, seguramente se cort&oacute;: p&iacute;delo otra vez.</div>'
+        : '<div class="tecnico-chip">Escribe tu nombre abajo para empezar.</div>';
       if(picker) picker.hidden = false;
       var dl = qs("tecnicos-list");
       if(dl) dl.innerHTML = TECNICOS.map(function(t){
@@ -1806,22 +1860,29 @@
   function altaTecnico(){
     var nombre = normName(qs("t-nombre").value);
     var cope   = normName(qs("t-cope").value);
+    var correo = String(qs("t-correo") ? qs("t-correo").value : "").trim().toLowerCase();
     var aviso  = qs("alta-aviso");
     aviso.innerHTML = "";
     qs("alta-enlace").innerHTML = "";
-    if(!nombre || !cope){
-      aviso.innerHTML = banner("warn", "El nombre y el COPE son obligatorios.");
+    if(!nombre || !cope || !correo){
+      aviso.innerHTML = banner("warn", "El nombre, el COPE y el correo son obligatorios.");
+      return;
+    }
+    if(!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(correo)){
+      aviso.innerHTML = banner("warn", "Ese correo no tiene buena pinta. Rev&iacute;salo.");
       return;
     }
     var btn = qs("btn-alta");
     btn.disabled = true; btn.textContent = "Agregando…";
-    callApi({ action:"addTecnico", nombre:nombre, cope:cope,
+    callApi({ action:"addTecnico", nombre:nombre, cope:cope, correo:correo,
               expediente:digitsOnly(qs("t-exp").value),
               alias:normName(qs("t-alias").value) })
       .then(function(r){
         if(Array.isArray(r.tecnicos) && r.tecnicos.length) TECNICOS = r.tecnicos;
-        ["t-nombre","t-cope","t-exp","t-alias"].forEach(function(id){ qs(id).value = ""; });
-        aviso.innerHTML = banner("ok", "✅ " + nombre + " ya puede capturar.");
+        ["t-nombre","t-cope","t-exp","t-alias","t-correo"].forEach(function(id){
+          if(qs(id)) qs(id).value = ""; });
+        aviso.innerHTML = banner("ok", "✅ " + esc(nombre) + " ya puede capturar, y " +
+          esc(correo) + " ya puede entrar.");
         qs("alta-enlace").innerHTML =
           '<div class="steps" style="margin-top:14px">Su enlace, listo para mandarle:<br>' +
           '<code style="word-break:break-all">'+esc(enlaceDe(nombre))+'</code>' +
@@ -1833,9 +1894,15 @@
         return refreshList();
       })
       .catch(function(err){
-        aviso.innerHTML = banner("danger", err.message === "ya_existe"
-          ? "Ya hay un técnico con ese nombre."
-          : "No se pudo agregar — vuelve a intentar.");
+        var porQue = {
+          ya_existe:        "Ya hay un t&eacute;cnico con ese nombre.",
+          correo_ya_usado:  "Ese correo ya est&aacute; dado de alta para otra persona.",
+          sin_correo:       "Falta el correo, o no es v&aacute;lido.",
+          hace_falta_entrar:"Entra con tu cuenta de Google antes de dar de alta a nadie.",
+          solo_supervisor:  "Solo qui&eacute;n arma el corte puede dar de alta t&eacute;cnicos."
+        };
+        aviso.innerHTML = banner("danger",
+          porQue[err.message] || "No se pudo agregar — vuelve a intentar.");
       })
       .finally(function(){ btn.disabled = false; btn.textContent = "Agregar técnico"; });
   }

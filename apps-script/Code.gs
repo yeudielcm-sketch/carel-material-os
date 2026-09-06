@@ -323,22 +323,87 @@ function leerTecnicos() {
   return out;
 }
 
-function addTecnico(body) {
-  var nombre = clean(body.nombre).toUpperCase();
+/**
+ * Sin acentos, en mayusculas y con un solo espacio. Hace lo mismo que
+ * normName() en la pagina: los dos lados tienen que comparar igual, o uno
+ * aceptara nombres que el otro rechaza.
+ */
+var ACENTOS_NOMBRE = { "\u00c1":"A","\u00c0":"A","\u00c4":"A","\u00c9":"E","\u00c8":"E","\u00cb":"E",
+                       "\u00cd":"I","\u00cc":"I","\u00cf":"I","\u00d3":"O","\u00d2":"O","\u00d6":"O",
+                       "\u00da":"U","\u00d9":"U","\u00dc":"U","\u00d1":"N" };
+
+function normNombre(v) {
+  return clean(v).toUpperCase().replace(/\s+/g, " ")
+    .replace(/[\u00c1\u00c0\u00c4\u00c9\u00c8\u00cb\u00cd\u00cc\u00cf\u00d3\u00d2\u00d6\u00da\u00d9\u00dc\u00d1]/g,
+      function (c) { return ACENTOS_NOMBRE[c]; });
+}
+
+/**
+ * El nombre CANONICO del tecnico, o "" si no esta dado de alta.
+ *
+ * Esta es la regla dura, y vive aqui —en el servidor— a proposito. La URL del
+ * /exec va dentro de la pagina publicada, asi que cualquiera puede llamarla con
+ * el nombre que se le ocurra: un candado que viva solo en el telefono no es una
+ * regla, es una sugerencia.
+ *
+ * Los alias SI valen. En el Excel de 2026 la misma persona aparecia escrita de
+ * tres formas, y esa columna existe justo para reconocerlas.
+ */
+function tecnicoCanonico(nombre) {
+  var n = normNombre(nombre);
+  if (!n) return "";
+  var fichas = leerTecnicos();
+  for (var i = 0; i < fichas.length; i++) {
+    if (normNombre(fichas[i].nombre) === n) return fichas[i].nombre;
+    for (var j = 0; j < fichas[i].alias.length; j++) {
+      if (normNombre(fichas[i].alias[j]) === n) return fichas[i].nombre;
+    }
+  }
+  return "";
+}
+
+/**
+ * Da de alta a un tecnico Y lo autoriza a entrar, en un solo movimiento.
+ *
+ * SOLO EL SUPERVISOR. No es un adorno: esto escribe en la pestana Autorizados,
+ * o sea decide quien puede entrar. Sin esta comprobacion, cualquiera que
+ * conociera la URL del /exec se autorizaria a si mismo — una puerta mas grande
+ * que la que estamos cerrando.
+ */
+function addTecnico(body, identidad) {
+  if (!identidad) return { error: "hace_falta_entrar" };
+  if (identidad.rol !== "SUPERVISOR") return { error: "solo_supervisor" };
+
+  var nombre = normNombre(body.nombre);
   if (!nombre) return { error: "sin_nombre" };
-  var cope = clean(body.cope).toUpperCase();
+  var cope = normNombre(body.cope);
   if (!cope) return { error: "sin_cope" };
+  var correo = correoCanonico(body.correo);
+  if (!correo) return { error: "sin_correo" };
 
   var ya = leerTecnicos();
   for (var i = 0; i < ya.length; i++) {
-    if (ya[i].nombre.toUpperCase() === nombre) return { error: "ya_existe" };
+    if (normNombre(ya[i].nombre) === nombre) return { error: "ya_existe" };
   }
+  var autorizados = leerAutorizados();
+  for (var k = 0; k < autorizados.length; k++) {
+    if (autorizados[k].correo === correo) return { error: "correo_ya_usado" };
+  }
+
   var sh = getHojaTecnicos();
-  var fila = sh.getLastRow() + 1;
-  var r = sh.getRange(fila, 1, 1, COLS_TEC.length);
+  var r = sh.getRange(sh.getLastRow() + 1, 1, 1, COLS_TEC.length);
   r.setNumberFormat("@");
   r.setValues([[nombre, cope, clean(body.expediente), clean(body.alias)]]);
-  return { ok: true, tecnicos: leerTecnicos() };
+
+  // El correo se escribe en el MISMO movimiento. Si se dejara para luego, la
+  // persona existiria como tecnico pero no podria entrar, y nadie sabria por
+  // que: se veria como que el acceso esta roto.
+  var sa = getHojaAutorizados();
+  var ra = sa.getRange(sa.getLastRow() + 1, 1, 1, COLS_AUT.length);
+  ra.setNumberFormat("@");
+  ra.setValues([[correo, nombre, "TECNICO"]]);
+
+  return { ok: true, tecnicos: leerTecnicos(), nombre: nombre, correo: correo };
 }
 
 // ---------------------------------------------------------------- entrada ---
@@ -388,7 +453,7 @@ function doPost(e) {
       case "saveMaterial":  r = saveMaterial(body); break;
       case "updateOrden":   r = updateOrden(body); break;
       case "marcarCopiada": r = marcarCopiada(body); break;
-      case "addTecnico":    r = addTecnico(body); break;
+      case "addTecnico":    r = addTecnico(body, identidad); break;
       default:              r = { error: "unknown_action" };
     }
     return respond(conIdentidad(r, identidad, aviso));
@@ -595,8 +660,16 @@ function addOrden(body) {
     }
   }
 
-  var tecnico = clean(body.tecnico);
-  if (!tecnico) return { error: "sin_tecnico" };
+  // REGLA DURA: solo se guarda con un nombre que este en la pestana Tecnicos.
+  // Antes, un ?tec= con cualquier cosa creaba un tecnico nuevo sin avisar y el
+  // corte de esa semana salia con un bloque de mas. Paso el 6/09/2026: WhatsApp
+  // corto un enlace en el primer espacio y llego "MARVIN" a secas.
+  //
+  // Se guarda el nombre CANONICO, no el que llego: asi un alias tampoco parte
+  // el corte en dos.
+  if (!clean(body.tecnico)) return { error: "sin_tecnico" };
+  var tecnico = tecnicoCanonico(body.tecnico);
+  if (!tecnico) return { error: "tecnico_no_dado_de_alta" };
 
   var semana = semanaDe(clean(body.fecha));
   var nFibra = num(body.nFibra);
@@ -733,10 +806,23 @@ function podarSiTocaHoy(sh) {
   try { podar(sh); } catch (e) { /* que una poda fallida no tire la lectura */ }
 }
 
+/**
+ * Se compara por el nombre canonico: si alguien manda un alias, la orden sigue
+ * siendo suya. Se conserva ademas la comparacion literal para las filas que se
+ * guardaron antes de que esto existiera.
+ */
 function mismoTecnico(fila, tecnico) {
-  var t = clean(tecnico);
-  if (!t) return false;
-  return String(fila[idx("Tecnico")]) === t;
+  var pedido = normNombre(tecnico);
+  if (!pedido) return false;
+  var guardado = normNombre(fila[idx("Tecnico")]);
+  if (!guardado) return false;
+  if (guardado === pedido) return true;
+  // Se canonizan LOS DOS lados. Hoy todas las filas estan con el nombre bueno,
+  // pero si alguna quedara escrita con un alias, comparar en un solo sentido
+  // dejaria a su dueno sin poder corregirla y sin entender por que.
+  var canonPedido  = tecnicoCanonico(tecnico) || pedido;
+  var canonGuardado = tecnicoCanonico(guardado) || guardado;
+  return normNombre(canonGuardado) === normNombre(canonPedido);
 }
 
 /**
