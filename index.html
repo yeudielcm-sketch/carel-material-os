@@ -797,21 +797,53 @@
    */
   var CLIENT_ID = "967277323982-57iv1odm3eh8vlf9hp0ujs6q9e5t394o.apps.googleusercontent.com";
 
-  var PASE = "";
   var IDENTIDAD = null;
-  try { PASE = sessionStorage.getItem("carel_pase") || ""; } catch(e){ PASE = ""; }
 
   /**
-   * El pase se guarda en sessionStorage y NO en localStorage: dura una hora y
-   * no tiene por qué quedarse escrito en un teléfono prestado.
+   * Segundos de vida que le quedan al pase, leídos del propio pase.
+   *
+   * Se saca con una expresión regular en vez de JSON.parse: el pase trae el
+   * nombre de la persona, y atob() devuelve bytes sueltos que rompen el parseo
+   * en cuanto hay un acento. Solo hace falta la fecha de caducidad.
+   */
+  function vidaDelPase(p){
+    var t = String(p || "").split(".");
+    if(t.length !== 3) return 0;
+    try{
+      var crudo = atob(t[1].replace(/-/g,"+").replace(/_/g,"/"));
+      var m = crudo.match(/"exp"\s*:\s*(\d+)/);
+      if(!m) return 0;
+      return parseInt(m[1],10) - Math.floor(Date.now()/1000);
+    }catch(e){ return 0; }
+  }
+
+  // Un minuto de margen: no vale la pena mandar uno que se muere por el camino.
+  function paseVigente(p){ return vidaDelPase(p) > 60; }
+
+  /**
+   * El pase vive en localStorage, no en sessionStorage.
+   *
+   * Lo tuve en sessionStorage y era el compromiso equivocado: se pierde al
+   * cerrar la app, así que el técnico tenía que volver a entrar cada vez que la
+   * abría. Lo dura una hora de todas formas —eso lo decide Google—, así que lo
+   * guardado caduca solo, y además se comprueba antes de usarlo.
    */
   function guardarPase(p){
-    PASE = p || "";
+    PASE = (p && paseVigente(p)) ? p : "";
     try {
-      if(PASE) sessionStorage.setItem("carel_pase", PASE);
-      else sessionStorage.removeItem("carel_pase");
+      if(PASE) localStorage.setItem("carel_pase", PASE);
+      else localStorage.removeItem("carel_pase");
     } catch(e){}
   }
+
+  var PASE = "";
+  (function(){
+    var g = "";
+    try{ g = localStorage.getItem("carel_pase") || ""; }catch(e){ g = ""; }
+    // Uno caducado no se manda: se tira aquí y se pide otro sin viaje perdido.
+    if(g && paseVigente(g)) PASE = g;
+    else if(g){ try{ localStorage.removeItem("carel_pase"); }catch(e){} }
+  })();
 
   /**
    * Google se niega a mostrar su pantalla de acceso dentro del navegador que
@@ -826,7 +858,7 @@
 
   var MOTIVOS = {
     no_autorizado: "Tu correo no est&aacute; en la lista de autorizados. Av&iacute;sale a qui&eacute;n arma el corte.",
-    pase_vencido: "Tu acceso caduc&oacute;. Vuelve a entrar con Google.",
+    pase_vencido: "Tu acceso caduc&oacute; —duran una hora—. Vuelve a entrar con Google.",
     pase_rechazado: "Google no reconoci&oacute; tu acceso. Vuelve a entrar.",
     pase_de_otra_app: "Ese acceso no es de esta app.",
     correo_sin_verificar: "Tu cuenta de Google no tiene el correo verificado.",
@@ -841,11 +873,23 @@
     msg.innerHTML = texto;
   }
 
-  function iniciarAcceso(){
+  /**
+   * Prepara el acceso. Con `forzar` se pide entrar aunque hubiera un pase — se
+   * usa cuando el guardado lo ha rechazado.
+   *
+   * Si ya hay pase vigente NO se pide nada. Antes se dibujaba el botón y se
+   * lanzaba el aviso de Google en cada carga, y aunque unos segundos después se
+   * corrigiera solo, lo que se veía era «me pide entrar cada vez que refresco».
+   */
+  function iniciarAcceso(forzar){
     if(navegadorEmbebido()){
       pintarAcceso("mal",
         "Est&aacute;s dentro del navegador de WhatsApp, y Google no deja entrar desde aqu&iacute;. " +
         "Abre este mismo enlace en <b>Chrome</b> y agr&eacute;galo a tu pantalla de inicio.");
+      return;
+    }
+    if(PASE && !forzar){
+      pintarAcceso("", "Comprobando tu acceso&hellip;");
       return;
     }
     if(!(window.google && google.accounts && google.accounts.id)) return;
@@ -899,7 +943,9 @@
       IDENTIDAD = null;
       guardarPase("");
       pintarAcceso("mal", MOTIVOS[d.paseInvalido] || "No se pudo confirmar tu acceso.");
-      iniciarAcceso();   // ya sin pase: no se vuelve a entrar aquí en bucle
+      // Con `true` porque el pase acaba de tirarse: hay que volver a pedirlo.
+      // Como PASE ya está vacío, esto no se puede repetir en bucle.
+      iniciarAcceso(true);
     }
   }
 
