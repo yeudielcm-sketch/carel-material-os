@@ -856,6 +856,13 @@
     return /\bwv\b/.test(ua) || /FBAN|FBAV|Instagram|Line\//.test(ua);
   }
 
+  /**
+   * Motivos que se pasan solos con un pase nuevo. Los que NO están aquí
+   * —correo sin autorizar, cuenta sin verificar, pase de otra app— seguirían
+   * igual por muchas veces que se pida: hace falta que alguien haga algo.
+   */
+  var SE_ARREGLA_SOLO = { pase_vencido:1, pase_rechazado:1, no_se_pudo_verificar:1 };
+
   var MOTIVOS = {
     no_autorizado: "Tu correo no est&aacute; en la lista de autorizados. Av&iacute;sale a qui&eacute;n arma el corte.",
     pase_vencido: "Tu acceso caduc&oacute; —duran una hora—. Vuelve a entrar con Google.",
@@ -881,6 +888,106 @@
    * lanzaba el aviso de Google en cada carga, y aunque unos segundos después se
    * corrigiera solo, lo que se veía era «me pide entrar cada vez que refresco».
    */
+  // Cuánto se espera a que Google conteste en silencio antes de rendirse y
+  // enseñar el botón. Si se acorta, se enseña el botón cuando no hacía falta.
+  var ESPERA_SILENCIO = 4000;
+
+  // Margen para renovar ANTES de que muera. El pase dura una hora y eso lo
+  // decide Google; lo que se puede evitar es que caduque en mitad de una
+  // captura, renovándolo en cuanto el técnico saca el teléfono.
+  var MARGEN_RENOVAR = 300;
+
+  // Tope de renovaciones automáticas por carga. Sin esto, alguien cuyo correo
+  // no esté autorizado entraría en bucle: pide pase, el guardado lo rechaza,
+  // vuelve a pedir. Se pone a cero cada vez que una renovación funciona.
+  var TOPE_RENOVAR = 3;
+
+  var GIS_LISTA = false, PIDIENDO = false, RENOVACIONES = 0, ESPERA = null;
+
+  /** initialize() una sola vez: repetirlo confunde a la librería de Google. */
+  function prepararGIS(){
+    if(GIS_LISTA) return true;
+    if(!(window.google && google.accounts && google.accounts.id)) return false;
+    try {
+      google.accounts.id.initialize({
+        client_id: CLIENT_ID,
+        callback: function(resp){
+          if(!resp || !resp.credential) return;
+          pararEspera();
+          PIDIENDO = false;
+          RENOVACIONES = 0;              // funcionó: se perdona el historial
+          guardarPase(resp.credential);
+          var caja = qs("acceso-boton");
+          if(caja) caja.innerHTML = "";
+          pintarAcceso("", "Comprobando tu acceso&hellip;");
+          refreshList(true);
+        },
+        // Con esto Google devuelve el pase SIN preguntar, si el teléfono ya
+        // tiene su sesión abierta y se le dio permiso una vez. Es lo que hace
+        // que caducar cada hora no se note.
+        auto_select: true,
+        cancel_on_tap_outside: false
+      });
+      GIS_LISTA = true;
+    } catch(e){ return false; }
+    return true;
+  }
+
+  function pararEspera(){ if(ESPERA){ clearTimeout(ESPERA); ESPERA = null; } }
+
+  function mostrarBotonDeEntrar(){
+    // El contenedor tiene que estar visible ANTES de dibujar el botón: sobre un
+    // elemento oculto, Google no pinta nada y no avisa de nada.
+    pintarAcceso("", "Puedes entrar con tu cuenta de Google. Todav&iacute;a no hace falta para capturar.");
+    var caja = qs("acceso-boton");
+    if(!caja || !prepararGIS()) return;
+    try {
+      caja.innerHTML = "";
+      google.accounts.id.renderButton(caja, {
+        type:"standard", theme:"outline", size:"medium",
+        text:"signin_with", shape:"pill", locale:"es"
+      });
+    } catch(e){
+      pintarAcceso("mal", "No se pudo cargar el acceso de Google. Puedes capturar igual.");
+    }
+  }
+
+  /**
+   * Le pide un pase a Google SIN molestar al técnico.
+   *
+   * Si el teléfono sigue con la sesión de Google abierta —en un Android eso
+   * dura años— vuelve solo y no se entera de nada. El botón solo sale si
+   * pasados unos segundos Google no ha dado nada: puede que tenga varias
+   * cuentas y haya que elegir, o que cerrara sesión.
+   *
+   * Antes se enseñaba el botón A LA VEZ que se pedía el pase. Aunque la
+   * renovación llegara un segundo después, lo que veía el técnico era «inicia
+   * sesión», y creía que tenía que hacerlo cada hora.
+   */
+  function pedirPaseCallando(){
+    if(!prepararGIS() || PIDIENDO) return;
+    if(RENOVACIONES >= TOPE_RENOVAR){ mostrarBotonDeEntrar(); return; }
+    PIDIENDO = true;
+    RENOVACIONES++;
+    pintarAcceso("", "Comprobando tu acceso&hellip;");
+    var caja = qs("acceso-boton");
+    if(caja) caja.innerHTML = "";
+    try { google.accounts.id.prompt(); } catch(e){}
+    pararEspera();
+    ESPERA = setTimeout(function(){
+      PIDIENDO = false;
+      if(!PASE) mostrarBotonDeEntrar();   // Google no dio nada: que lo pida él
+    }, ESPERA_SILENCIO);
+  }
+
+  /** Se llama al arrancar y cada vez que la app vuelve a estar a la vista. */
+  function renovarSiHaceFalta(){
+    if(navegadorEmbebido()) return;
+    if(PASE && vidaDelPase(PASE) > MARGEN_RENOVAR) return;
+    if(PASE) guardarPase("");            // agonizando: fuera antes de pedir otro
+    pedirPaseCallando();
+  }
+
   function iniciarAcceso(forzar){
     if(navegadorEmbebido()){
       pintarAcceso("mal",
@@ -888,45 +995,24 @@
         "Abre este mismo enlace en <b>Chrome</b> y agr&eacute;galo a tu pantalla de inicio.");
       return;
     }
-    if(PASE && !forzar){
+    if(forzar) guardarPase("");
+    if(PASE && vidaDelPase(PASE) > MARGEN_RENOVAR){
       pintarAcceso("", "Comprobando tu acceso&hellip;");
       return;
     }
-    if(!(window.google && google.accounts && google.accounts.id)) return;
-
-    // El contenedor tiene que estar visible ANTES de dibujar el botón: sobre un
-    // elemento oculto, Google no pinta nada y no avisa de nada.
-    pintarAcceso("", "Puedes entrar con tu cuenta de Google. Todav&iacute;a no hace falta para capturar.");
-    try {
-      google.accounts.id.initialize({
-        client_id: CLIENT_ID,
-        callback: function(resp){
-          if(!resp || !resp.credential) return;
-          guardarPase(resp.credential);
-          pintarAcceso("", "Comprobando tu acceso&hellip;");
-          refreshList(true);
-        },
-        auto_select: true,
-        cancel_on_tap_outside: false
-      });
-      var caja = qs("acceso-boton");
-      if(caja){
-        caja.innerHTML = "";
-        google.accounts.id.renderButton(caja, {
-          type:"standard", theme:"outline", size:"medium",
-          text:"signin_with", shape:"pill", locale:"es"
-        });
-      }
-      google.accounts.id.prompt();
-    } catch(e){
-      // Que el acceso falle no puede tumbar la captura.
-      pintarAcceso("mal", "No se pudo cargar el acceso de Google. Puedes capturar igual.");
-    }
+    pedirPaseCallando();
   }
 
-  // La librería avisa por aquí cuando termina de cargar. Si ya estaba cargada
-  // antes de llegar a esta línea, boot() lo llama a mano.
-  window.onGoogleLibraryLoad = iniciarAcceso;
+  // El técnico saca el teléfono a las dos horas: aquí es donde se cambia el
+  // pase muerto por uno fresco, antes de que toque nada.
+  document.addEventListener("visibilitychange", function(){
+    if(!document.hidden) renovarSiHaceFalta();
+  });
+
+  // La librería avisa por aquí cuando termina de cargar. Envuelto a propósito:
+  // si algún día Google le pasara un argumento, entraría como `forzar` y
+  // tiraría un pase que estaba perfectamente vivo.
+  window.onGoogleLibraryLoad = function(){ iniciarAcceso(); };
 
   /** Refleja lo que el guardado contestó sobre quién eres. */
   function mostrarIdentidad(d){
@@ -943,9 +1029,12 @@
       IDENTIDAD = null;
       guardarPase("");
       pintarAcceso("mal", MOTIVOS[d.paseInvalido] || "No se pudo confirmar tu acceso.");
-      // Con `true` porque el pase acaba de tirarse: hay que volver a pedirlo.
-      // Como PASE ya está vacío, esto no se puede repetir en bucle.
-      iniciarAcceso(true);
+      // Solo se reintenta en silencio lo que puede arreglarse solo. Que el
+      // correo no esté autorizado no se arregla pidiendo otro pase: Google
+      // devolvería el mismo, el guardado lo rechazaría otra vez, y así sin fin.
+      // Esos casos necesitan que actúe una persona, así que sale el botón.
+      if(SE_ARREGLA_SOLO[d.paseInvalido]) pedirPaseCallando();
+      else mostrarBotonDeEntrar();
     }
   }
 
