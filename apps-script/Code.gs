@@ -114,6 +114,163 @@ var SEMILLAS = {
 var CON_LISTA = ["cope", "tipoOs", "distrito", "terminal", "puerto", "modelo",
                  "cv", "barrio", "metraje", "observaciones", "autoriza", "nip", "vigencia"];
 
+// -------------------------------------------------------------- identidad ---
+
+/**
+ * ID de cliente de OAuth de la página.
+ *
+ * NO es un secreto y no pasa nada porque se lea: Google lo publica en toda
+ * página que use su botón de acceso, y solo funciona desde el origen que se
+ * registró en la consola (https://yeudielcm-sketch.github.io). La credencial de
+ * verdad es el pase de cada persona: lo emite Google al iniciar sesión, dura
+ * una hora, y no vive en el repositorio ni en esta hoja.
+ */
+var CLIENT_ID = "967277323982-57iv1odm3eh8vlf9hp0ujs6q9e5t394o.apps.googleusercontent.com";
+
+/**
+ * Quién puede entrar. Se llena A MANO en la hoja, nunca desde el código: son
+ * correos de personas y el repositorio es público.
+ *
+ * Rol: SUPERVISOR o TECNICO (cualquier otra cosa se toma como TECNICO). Dar de
+ * alta a alguien es escribir una fila; darlo de baja, borrarla. No hay que
+ * volver a implementar nada.
+ */
+var SHEET_AUTORIZADOS = "Autorizados";
+var COLS_AUT = ["Correo", "Nombre", "Rol"];
+
+function getHojaAutorizados() {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var sh = ss.getSheetByName(SHEET_AUTORIZADOS);
+  if (sh) return sh;
+  sh = ss.insertSheet(SHEET_AUTORIZADOS);
+  sh.appendRow(COLS_AUT);
+  sh.setFrozenRows(1);
+  sh.getRange(1, 1, 1, COLS_AUT.length).setFontWeight("bold");
+  return sh;
+}
+
+/** Se puede ejecutar a mano desde el editor para que la pestaña aparezca ya. */
+function prepararAutorizados() {
+  getHojaAutorizados();
+}
+
+/**
+ * Deja el correo en una sola forma para poder compararlo. Gmail ignora los
+ * puntos y lo que va tras un "+", así que yeudiel.cm+os@gmail.com y
+ * yeudielcm@gmail.com son la MISMA cuenta: sin esto, uno de los dos se queda
+ * fuera sin que se entienda por qué.
+ */
+function correoCanonico(v) {
+  var c = clean(v).toLowerCase();
+  var p = c.split("@");
+  if (p.length !== 2 || !p[0] || !p[1]) return "";
+  var usuario = p[0].split("+")[0];
+  if (p[1] === "gmail.com" || p[1] === "googlemail.com") {
+    return usuario.replace(/\./g, "") + "@gmail.com";
+  }
+  return usuario + "@" + p[1];
+}
+
+function leerAutorizados() {
+  var sh = getHojaAutorizados();
+  var last = sh.getLastRow();
+  if (last < 2) return [];
+  var v = sh.getRange(2, 1, last - 1, COLS_AUT.length).getValues();
+  var out = [];
+  for (var i = 0; i < v.length; i++) {
+    var correo = correoCanonico(v[i][0]);
+    if (!correo) continue;
+    out.push({ correo: correo,
+               nombre: clean(v[i][1]),
+               rol: clean(v[i][2]).toUpperCase() === "SUPERVISOR" ? "SUPERVISOR" : "TECNICO" });
+  }
+  return out;
+}
+
+/**
+ * Comprueba con Google que el pase es de verdad y dice de quién es.
+ *
+ * Devuelve null si no vino pase, {error:...} si vino pero no sirve, o la ficha
+ * de la persona si todo cuadra. FASE 2: nadie usa esto todavía para rechazar
+ * nada — se devuelve para que cada quien vea en su teléfono que su acceso
+ * quedó bien antes de que empecemos a exigirlo.
+ */
+function verificarPase(pase) {
+  var token = clean(pase);
+  if (!token) return null;
+
+  var cache = CacheService.getScriptCache();
+  var llave = "pase_" + Utilities.base64EncodeWebSafe(
+    Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, token));
+  var guardado = cache.get(llave);
+  if (guardado) {
+    try { return JSON.parse(guardado); } catch (eCache) { /* caché ilegible: se rehace */ }
+  }
+
+  var datos;
+  try {
+    var r = UrlFetchApp.fetch(
+      "https://oauth2.googleapis.com/tokeninfo?id_token=" + encodeURIComponent(token),
+      { muteHttpExceptions: true });
+    if (r.getResponseCode() !== 200) return { error: "pase_rechazado" };
+    datos = JSON.parse(r.getContentText());
+  } catch (eRed) {
+    // Si Google no contesta NO se inventa una identidad: se dice que no se pudo.
+    return { error: "no_se_pudo_verificar" };
+  }
+
+  // Que el pase sea válido no basta: tiene que ser un pase para ESTA app. Sin
+  // esta comprobación, un pase de cualquier otra web serviría aquí.
+  if (datos.aud !== CLIENT_ID) return { error: "pase_de_otra_app" };
+  if (String(datos.email_verified) !== "true") return { error: "correo_sin_verificar" };
+  var ahora = Math.floor(new Date().getTime() / 1000);
+  if (!(Number(datos.exp) > ahora)) return { error: "pase_vencido" };
+
+  var correo = correoCanonico(datos.email);
+  var lista = leerAutorizados();
+  var quien = null;
+  for (var i = 0; i < lista.length; i++) {
+    if (lista[i].correo === correo) { quien = lista[i]; break; }
+  }
+  // Arranque: con la pestaña vacía solo entra el dueño del script, para que
+  // pueda llenarla sin dejarse fuera a sí mismo.
+  if (!quien && !lista.length) {
+    var duenio = "";
+    try { duenio = correoCanonico(Session.getEffectiveUser().getEmail()); }
+    catch (eDuenio) { duenio = ""; }
+    if (duenio && duenio === correo) {
+      quien = { correo: correo, nombre: "Supervisor", rol: "SUPERVISOR" };
+    }
+  }
+  if (!quien) return { error: "no_autorizado" };
+
+  var id = { correo: quien.correo, nombre: quien.nombre, rol: quien.rol };
+  // Cinco minutos como mucho: el permiso se quita borrando una fila de la hoja
+  // y eso tiene que surtir efecto pronto, no dentro de una hora.
+  var vida = Math.min(300, Number(datos.exp) - ahora);
+  if (vida > 0) cache.put(llave, JSON.stringify(id), vida);
+  return id;
+}
+
+/**
+ * Cuelga de la respuesta quién resultó ser quien llamó.
+ *
+ * FASE 2 y solo fase 2: es informativo. No se rechaza nada por no traer pase,
+ * ni se recorta la respuesta según el rol. Eso llega en la fase 3, cuando los
+ * tres técnicos ya hayan entrado bien.
+ */
+function conIdentidad(obj, identidad, aviso) {
+  var o = obj || {};
+  if (identidad) {
+    o.identidad = { correo: identidad.correo, nombre: identidad.nombre, rol: identidad.rol };
+  } else if (aviso) {
+    o.paseInvalido = aviso;
+  }
+  return o;
+}
+
+function esUno(v) { return v === "1" || v === 1 || v === true; }
+
 // --------------------------------------------------------------- técnicos ---
 
 var SHEET_TECNICOS = "Tecnicos";
@@ -193,23 +350,48 @@ function doGet(e) {
   return respond({ error: "unknown_action" });
 }
 
+/**
+ * La lectura también entra por aquí cuando el teléfono trae pase: un pase son
+ * unos mil caracteres y en la barra de direcciones acabaría copiado en los
+ * registros de medio camino. Por POST no queda escrito en ninguna parte.
+ *
+ * Ojo al tocar el cliente: a la petición NO se le pone Content-Type. En cuanto
+ * se le pone, el navegador manda antes una petición OPTIONS que Apps Script no
+ * sabe contestar, y deja de funcionar el guardado entero.
+ */
 function doPost(e) {
-  var lock = LockService.getScriptLock();
-  var gotLock = lock.tryLock(20000);
-  if (!gotLock) return respond({ error: "busy" });
-  try {
-    var body = {};
-    try { body = JSON.parse((e && e.postData && e.postData.contents) || "{}"); }
-    catch (parseErr) { return respond({ error: "bad_json" }); }
+  var body = {};
+  try { body = JSON.parse((e && e.postData && e.postData.contents) || "{}"); }
+  catch (parseErr) { return respond({ error: "bad_json" }); }
 
-    switch (body.action) {
-      case "addOrden":      return respond(addOrden(body));
-      case "saveMaterial":  return respond(saveMaterial(body));
-      case "updateOrden":   return respond(updateOrden(body));
-      case "marcarCopiada": return respond(marcarCopiada(body));
-      case "addTecnico":    return respond(addTecnico(body));
-      default:              return respond({ error: "unknown_action" });
+  // Fuera del candado a propósito: verificar el pase habla con Google por red y
+  // no tiene por qué tener parados a los demás mientras tanto.
+  var visto = verificarPase(body.pase);
+  var identidad = (visto && !visto.error) ? visto : null;
+  var aviso = (visto && visto.error) ? visto.error : "";
+
+  // Listar no escribe en la hoja: no necesita candado.
+  if (body.action === "list") {
+    try {
+      return respond(conIdentidad(listEntries(esUno(body.full), body.tec), identidad, aviso));
+    } catch (errList) {
+      return respond({ error: String(errList && errList.message ? errList.message : errList) });
     }
+  }
+
+  var lock = LockService.getScriptLock();
+  if (!lock.tryLock(20000)) return respond({ error: "busy" });
+  try {
+    var r;
+    switch (body.action) {
+      case "addOrden":      r = addOrden(body); break;
+      case "saveMaterial":  r = saveMaterial(body); break;
+      case "updateOrden":   r = updateOrden(body); break;
+      case "marcarCopiada": r = marcarCopiada(body); break;
+      case "addTecnico":    r = addTecnico(body); break;
+      default:              r = { error: "unknown_action" };
+    }
+    return respond(conIdentidad(r, identidad, aviso));
   } catch (err) {
     return respond({ error: String(err && err.message ? err.message : err) });
   } finally {
@@ -349,6 +531,10 @@ function listEntries(full, tec) {
     if (String(r[idx("Copiada")])) continue; // archivada: fuera del consolidado
     entries.push(filaAObjeto(r, false));
   }
+
+  // Que la pestaña de autorizados exista desde el primer día, sin esperar a que
+  // alguien inicie sesión: si no, no hay dónde escribir los correos.
+  try { getHojaAutorizados(); } catch (eAut) { /* nunca por encima de la captura */ }
 
   // Si algo falla leyendo los técnicos, la captura NO se cae: la app tiene su
   // propia copia de respaldo.

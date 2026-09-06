@@ -86,6 +86,15 @@
   [data-instalable] .instalar{background:var(--accent);color:var(--accent-ink)}
   .instalar:active{transform:translateY(1px)}
 
+  /* Barra de acceso con Google. Discreta a propósito: en esta fase el acceso
+     todavía no hace falta para capturar, y no debe parecer un obstáculo. */
+  .acceso-fila{max-width:980px;margin:0 auto;padding:12px 18px 0;
+    display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+  .acceso-msg{font-size:12.5px;color:var(--muted);line-height:1.45;flex:1 1 240px}
+  .acceso-msg b{color:var(--text)}
+  .acceso-msg.ok{color:var(--ok);font-weight:600}
+  .acceso-msg.mal{color:var(--danger)}
+
   .tab{appearance:none;border:none;background:none;color:var(--muted);font-family:inherit;
     font-size:14px;font-weight:600;padding:10px 2px;margin-right:16px;cursor:pointer;
     border-bottom:2.5px solid transparent;white-space:nowrap}
@@ -314,6 +323,14 @@
   <button class="instalar" id="btn-instalar" type="button">Instalar</button>
 </div>
 
+<!-- El acceso con Google ya funciona, pero TODAV&Iacute;A NO ES OBLIGATORIO: est&aacute;
+     aqu&iacute; para que cada quien confirme que su cuenta qued&oacute; dada de alta antes
+     de que se empiece a exigir. Si algo falla, se sigue capturando igual. -->
+<div class="acceso-fila" id="fila-acceso" hidden>
+  <div class="acceso-msg" id="acceso-msg"></div>
+  <div id="acceso-boton"></div>
+</div>
+
 <!-- ===================== PANTALLA 1 y 2 ===================== -->
 <main class="view" id="view-reportar">
   <div id="banner-top"></div>
@@ -449,6 +466,11 @@
 </div>
 
 <div id="toast" role="status" aria-live="polite"></div>
+
+<!-- Acceso con Google. Va aparte y avisa por onGoogleLibraryLoad cuando está
+     lista. Si no carga —sin señal, o bloqueada— la app sigue capturando igual:
+     en esta fase el acceso no es obligatorio. -->
+<script src="https://accounts.google.com/gsi/client" async defer></script>
 
 <script>
 (function(){
@@ -729,21 +751,156 @@
     return L.join("\n");
   }
 
+  // -------------------------------------------------------------- acceso ---
+
+  /**
+   * ID de cliente de OAuth de esta página.
+   *
+   * No es un secreto y da igual que se lea aquí: Google lo publica en toda
+   * página que use su botón de acceso, y solo funciona desde el origen que se
+   * registró en la consola. La credencial de verdad es el pase de cada
+   * persona, que emite Google al entrar y dura una hora.
+   */
+  var CLIENT_ID = "967277323982-57iv1odm3eh8vlf9hp0ujs6q9e5t394o.apps.googleusercontent.com";
+
+  var PASE = "";
+  var IDENTIDAD = null;
+  try { PASE = sessionStorage.getItem("carel_pase") || ""; } catch(e){ PASE = ""; }
+
+  /**
+   * El pase se guarda en sessionStorage y NO en localStorage: dura una hora y
+   * no tiene por qué quedarse escrito en un teléfono prestado.
+   */
+  function guardarPase(p){
+    PASE = p || "";
+    try {
+      if(PASE) sessionStorage.setItem("carel_pase", PASE);
+      else sessionStorage.removeItem("carel_pase");
+    } catch(e){}
+  }
+
+  /**
+   * Google se niega a mostrar su pantalla de acceso dentro del navegador que
+   * WhatsApp abre desde el chat. No es un fallo de esta app y no tiene arreglo
+   * desde aquí: hay que abrir el enlace en Chrome. Se avisa, en vez de dejarlos
+   * mirando un error de Google que no explica nada.
+   */
+  function navegadorEmbebido(){
+    var ua = navigator.userAgent || "";
+    return /\bwv\b/.test(ua) || /FBAN|FBAV|Instagram|Line\//.test(ua);
+  }
+
+  var MOTIVOS = {
+    no_autorizado: "Tu correo no est&aacute; en la lista de autorizados. Av&iacute;sale a qui&eacute;n arma el corte.",
+    pase_vencido: "Tu acceso caduc&oacute;. Vuelve a entrar con Google.",
+    pase_rechazado: "Google no reconoci&oacute; tu acceso. Vuelve a entrar.",
+    pase_de_otra_app: "Ese acceso no es de esta app.",
+    correo_sin_verificar: "Tu cuenta de Google no tiene el correo verificado.",
+    no_se_pudo_verificar: "No se pudo confirmar tu acceso ahora mismo. Puedes capturar igual."
+  };
+
+  function pintarAcceso(estado, texto){
+    var fila = qs("fila-acceso"), msg = qs("acceso-msg");
+    if(!fila || !msg) return;
+    fila.hidden = false;
+    msg.className = "acceso-msg" + (estado ? " " + estado : "");
+    msg.innerHTML = texto;
+  }
+
+  function iniciarAcceso(){
+    if(navegadorEmbebido()){
+      pintarAcceso("mal",
+        "Est&aacute;s dentro del navegador de WhatsApp, y Google no deja entrar desde aqu&iacute;. " +
+        "Abre este mismo enlace en <b>Chrome</b> y agr&eacute;galo a tu pantalla de inicio.");
+      return;
+    }
+    if(!(window.google && google.accounts && google.accounts.id)) return;
+
+    // El contenedor tiene que estar visible ANTES de dibujar el botón: sobre un
+    // elemento oculto, Google no pinta nada y no avisa de nada.
+    pintarAcceso("", "Puedes entrar con tu cuenta de Google. Todav&iacute;a no hace falta para capturar.");
+    try {
+      google.accounts.id.initialize({
+        client_id: CLIENT_ID,
+        callback: function(resp){
+          if(!resp || !resp.credential) return;
+          guardarPase(resp.credential);
+          pintarAcceso("", "Comprobando tu acceso&hellip;");
+          refreshList(true);
+        },
+        auto_select: true,
+        cancel_on_tap_outside: false
+      });
+      var caja = qs("acceso-boton");
+      if(caja){
+        caja.innerHTML = "";
+        google.accounts.id.renderButton(caja, {
+          type:"standard", theme:"outline", size:"medium",
+          text:"signin_with", shape:"pill", locale:"es"
+        });
+      }
+      google.accounts.id.prompt();
+    } catch(e){
+      // Que el acceso falle no puede tumbar la captura.
+      pintarAcceso("mal", "No se pudo cargar el acceso de Google. Puedes capturar igual.");
+    }
+  }
+
+  // La librería avisa por aquí cuando termina de cargar. Si ya estaba cargada
+  // antes de llegar a esta línea, boot() lo llama a mano.
+  window.onGoogleLibraryLoad = iniciarAcceso;
+
+  /** Refleja lo que el guardado contestó sobre quién eres. */
+  function mostrarIdentidad(d){
+    if(!d) return;
+    if(d.identidad){
+      IDENTIDAD = d.identidad;
+      var caja = qs("acceso-boton");
+      if(caja) caja.innerHTML = "";
+      pintarAcceso("ok", "Entraste como <b>" + esc(d.identidad.nombre || d.identidad.correo) +
+        "</b> &middot; " + esc(String(d.identidad.rol || "").toLowerCase()));
+      return;
+    }
+    if(d.paseInvalido){
+      IDENTIDAD = null;
+      guardarPase("");
+      pintarAcceso("mal", MOTIVOS[d.paseInvalido] || "No se pudo confirmar tu acceso.");
+      iniciarAcceso();   // ya sin pase: no se vuelve a entrar aquí en bucle
+    }
+  }
+
   // ---------------------------------------------------------------- red ---
 
+  /**
+   * A la petición NO se le pone Content-Type a propósito. En cuanto se le pone,
+   * el navegador manda antes una petición OPTIONS que Apps Script no sabe
+   * contestar, y deja de funcionar el guardado entero.
+   */
   function callApi(payload){
-    return fetch(WEBAPP_URL, { method:"POST", body:JSON.stringify(payload) })
+    var cuerpo = Object.assign({}, payload);
+    if(PASE) cuerpo.pase = PASE;
+    return fetch(WEBAPP_URL, { method:"POST", body:JSON.stringify(cuerpo) })
       .then(function(r){ return r.json(); })
       .then(function(d){
+        mostrarIdentidad(d);
         if(d && d.error) throw new Error(d.error);
         return d;
       });
   }
 
   function fetchList(full){
-    var q = "?action=list" + (full ? "&full=1" : "");
     // Con el técnico, el guardado devuelve además SUS órdenes de dos semanas y
     // el número que le toca. Se filtra allá para no mandarle las de los demás.
+
+    // Con pase se va por POST: un pase son unos mil caracteres y en la barra de
+    // direcciones acabaría copiado en los registros de todo el camino.
+    if(PASE){
+      var cuerpo = { action:"list", full: full ? "1" : "", pase: PASE };
+      if(TECNICO) cuerpo.tec = TECNICO;
+      return fetch(WEBAPP_URL, { method:"POST", body:JSON.stringify(cuerpo) })
+        .then(function(r){ return r.json(); });
+    }
+    var q = "?action=list" + (full ? "&full=1" : "");
     if(TECNICO) q += "&tec=" + encodeURIComponent(TECNICO);
     return fetch(WEBAPP_URL + q).then(function(r){ return r.json(); });
   }
@@ -751,6 +908,9 @@
   function refreshList(full){
     if(!configured) return Promise.resolve();
     return fetchList(full).then(function(d){
+      // Antes del filtro de abajo: la identidad se enseña aunque la lista venga
+      // vacía o rara, que es justo cuando hace falta saber quién eres.
+      mostrarIdentidad(d);
       if(!d || !Array.isArray(d.entries)) return;
       STATE.entries = d.entries;
       STATE.tecnicos = d.tecnicos || [];
@@ -1860,8 +2020,10 @@
   /** Qué hacer a mano, según dónde esté abierta la página. */
   function comoInstalar(){
     var ua = navigator.userAgent || "";
-    // El navegador de dentro de WhatsApp no instala nada, y además no da cámara.
-    if(/\bwv\b/.test(ua) || /FBAN|FBAV|Instagram|Line\//.test(ua)){
+    // El navegador de dentro de WhatsApp no instala nada, no da cámara y —desde
+    // que hay acceso con Google— tampoco deja iniciar sesión. Un solo sitio
+    // decide qué cuenta como embebido: separarlos acaba en que discrepan.
+    if(navegadorEmbebido()){
       return "Este enlace se abrió dentro de otra aplicación. Toca el menú de " +
              "los tres puntos y elige «Abrir en el navegador»; desde Chrome sí " +
              "se puede instalar.";
@@ -1969,6 +2131,10 @@
       qs("btn-generar").disabled = true;
       return;
     }
+
+    // Si la librería de Google ya había cargado antes de llegar aquí, su aviso
+    // ya pasó de largo: se llama a mano. Si no, lo hará onGoogleLibraryLoad.
+    iniciarAcceso();
 
     // El índice completo (para los avisos de duplicado) se pide una sola vez.
     Promise.all([refreshList(true), probarLector()]).then(function(){
