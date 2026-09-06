@@ -78,10 +78,21 @@ Con `?tec=NOMBRE` al final, esa persona ve su nombre fijo cada vez que entra y n
 lo escribe nunca:
 
 ```
-https://yeudielcm-sketch.github.io/carel-material-os/?tec=JULIO CESAR LOPEZ SANCHEZ
-https://yeudielcm-sketch.github.io/carel-material-os/?tec=CARLOS DANIEL BERMUDEZ
-https://yeudielcm-sketch.github.io/carel-material-os/?tec=MARVIN ALEXIS MARTINEZ
+https://yeudielcm-sketch.github.io/carel-material-os/?tec=JULIO%20CESAR%20LOPEZ%20SANCHEZ
+https://yeudielcm-sketch.github.io/carel-material-os/?tec=CARLOS%20DANIEL%20BERMUDEZ
+https://yeudielcm-sketch.github.io/carel-material-os/?tec=MARVIN%20ALEXIS%20MARTINEZ
 ```
+
+> **Los `%20` son los espacios y no se pueden quitar.** Si el enlace lleva
+> espacios de verdad, WhatsApp lo corta en el primero: manda solo
+> `...?tec=MARVIN` y deja el resto como texto suelto. La app abre entonces con
+> el nombre «MARVIN», que no es ningún tecnico dado de alta, y **lo que se
+> capture ahi se guarda bajo ese nombre** — el corte sale partido en un bloque
+> de mas. Paso de verdad el 6/09/2026.
+>
+> Lo mas seguro es no escribirlos a mano: el Modulo de Administrador tiene la
+> lista de tecnicos con un boton **Copiar** al lado de cada uno, y ese enlace
+> ya sale bien codificado.
 
 Sin ese parámetro, el primer reporte les pide el nombre y queda recordado en el
 navegador mientras no cierren la pestaña.
