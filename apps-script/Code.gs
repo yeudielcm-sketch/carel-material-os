@@ -136,17 +136,64 @@ var CLIENT_ID = "967277323982-57iv1odm3eh8vlf9hp0ujs6q9e5t394o.apps.googleuserco
  * volver a implementar nada.
  */
 var SHEET_AUTORIZADOS = "Autorizados";
-var COLS_AUT = ["Correo", "Nombre", "Rol"];
+
+/**
+ * UltimoAcceso es lo unico que dice si alguien ha conseguido entrar de verdad.
+ * Apps Script NO anota las ejecuciones anonimas de un Web App —el panel marca
+ * cero aunque el endpoint se este usando—, asi que sin esta columna la unica
+ * prueba de que un tecnico se identifico son capturas de pantalla.
+ */
+var COLS_AUT = ["Correo", "Nombre", "Rol", "UltimoAcceso"];
+
+/** Cada cuanto se vuelve a sellar. La app pregunta cada 20 segundos y no tiene
+ *  ningun sentido tocar la hoja en cada vuelta. */
+var MINUTOS_ENTRE_SELLOS = 30;
 
 function getHojaAutorizados() {
   var ss = SpreadsheetApp.getActiveSpreadsheet();
   var sh = ss.getSheetByName(SHEET_AUTORIZADOS);
-  if (sh) return sh;
-  sh = ss.insertSheet(SHEET_AUTORIZADOS);
-  sh.appendRow(COLS_AUT);
-  sh.setFrozenRows(1);
-  sh.getRange(1, 1, 1, COLS_AUT.length).setFontWeight("bold");
+  if (!sh) {
+    sh = ss.insertSheet(SHEET_AUTORIZADOS);
+    sh.appendRow(COLS_AUT);
+    sh.setFrozenRows(1);
+    sh.getRange(1, 1, 1, COLS_AUT.length).setFontWeight("bold");
+    return sh;
+  }
+  // La pestana puede ser de antes de que existiera alguna columna. Se anade la
+  // que falte SIN pisar las que ya tienen nombre: si alguien renombro una a
+  // mano, se respeta.
+  if (sh.getMaxColumns() < COLS_AUT.length) {
+    sh.insertColumnsAfter(sh.getMaxColumns(), COLS_AUT.length - sh.getMaxColumns());
+  }
+  var cab = sh.getRange(1, 1, 1, COLS_AUT.length).getValues()[0];
+  for (var i = 0; i < COLS_AUT.length; i++) {
+    if (!clean(cab[i])) {
+      sh.getRange(1, i + 1).setValue(COLS_AUT[i]).setFontWeight("bold");
+    }
+  }
   return sh;
+}
+
+/**
+ * Deja constancia de que esta persona entro. Se llama solo cuando el pase se ha
+ * verificado de verdad contra Google, nunca por intentarlo.
+ *
+ * Si falla, se ignora: el sello es para nosotros, y no puede ser el motivo por
+ * el que un tecnico se quede sin entrar.
+ */
+function marcarAcceso(fila, sello) {
+  if (!fila) return;
+  var ahora = new Date();
+  var m = String(sello || "").match(/^(\d{4})-(\d{2})-(\d{2})[ T](\d{2}):(\d{2})/);
+  if (m) {
+    var visto = new Date(+m[1], +m[2] - 1, +m[3], +m[4], +m[5]);
+    if ((ahora - visto) < MINUTOS_ENTRE_SELLOS * 60000) return;   // recien sellado
+  }
+  var col = COLS_AUT.indexOf("UltimoAcceso") + 1;
+  var r = getHojaAutorizados().getRange(fila, col);
+  r.setNumberFormat("@");
+  r.setValue(Utilities.formatDate(ahora,
+    Session.getScriptTimeZone() || "America/Mexico_City", "yyyy-MM-dd HH:mm"));
 }
 
 /** Se puede ejecutar a mano desde el editor para que la pestaña aparezca ya. */
@@ -182,7 +229,10 @@ function leerAutorizados() {
     if (!correo) continue;
     out.push({ correo: correo,
                nombre: clean(v[i][1]),
-               rol: clean(v[i][2]).toUpperCase() === "SUPERVISOR" ? "SUPERVISOR" : "TECNICO" });
+               rol: clean(v[i][2]).toUpperCase() === "SUPERVISOR" ? "SUPERVISOR" : "TECNICO",
+               // La fila hace falta para poder sellar el ultimo acceso.
+               fila: i + 2,
+               ultimoAcceso: clean(v[i][3]) });
   }
   return out;
 }
@@ -243,6 +293,11 @@ function verificarPase(pase) {
     }
   }
   if (!quien) return { error: "no_autorizado" };
+
+  // Solo se llega aqui con un pase comprobado contra Google. Va antes de meter
+  // nada en cache: en cache no se vuelve a entrar durante cinco minutos, y el
+  // sello se perderia.
+  try { marcarAcceso(quien.fila, quien.ultimoAcceso); } catch (eSello) { /* nunca por encima de entrar */ }
 
   var id = { correo: quien.correo, nombre: quien.nombre, rol: quien.rol };
   // Cinco minutos como mucho: el permiso se quita borrando una fila de la hoja
@@ -399,9 +454,13 @@ function addTecnico(body, identidad) {
   // persona existiria como tecnico pero no podria entrar, y nadie sabria por
   // que: se veria como que el acceso esta roto.
   var sa = getHojaAutorizados();
+  // Se rellena hasta el ancho que tenga COLS_AUT: si se anade una columna y
+  // esto se queda corto, setValues revienta y el alta deja de funcionar.
+  var filaAut = [correo, nombre, "TECNICO"];
+  while (filaAut.length < COLS_AUT.length) filaAut.push("");
   var ra = sa.getRange(sa.getLastRow() + 1, 1, 1, COLS_AUT.length);
   ra.setNumberFormat("@");
-  ra.setValues([[correo, nombre, "TECNICO"]]);
+  ra.setValues([filaAut]);
 
   return { ok: true, tecnicos: leerTecnicos(), nombre: nombre, correo: correo };
 }
