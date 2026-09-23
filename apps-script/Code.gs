@@ -143,7 +143,14 @@ var SHEET_AUTORIZADOS = "Autorizados";
  * cero aunque el endpoint se este usando—, asi que sin esta columna la unica
  * prueba de que un tecnico se identifico son capturas de pantalla.
  */
-var COLS_AUT = ["Correo", "Nombre", "Rol", "UltimoAcceso"];
+/**
+ * Cope es opcional y SOLO se usa si el Rol es SUPERVISOR: vacia significa que
+ * ve todos los COPEs, igual que hoy. Con un COPE puesto, listEntries() le
+ * recorta entries/indice/tecnicos/catalogos a ese COPE nada mas. A un TECNICO
+ * esta columna no le hace nada — el suyo ya llega filtrado por nombre en
+ * `mias`, no por Cope.
+ */
+var COLS_AUT = ["Correo", "Nombre", "Rol", "UltimoAcceso", "Cope"];
 
 /** Cada cuanto se vuelve a sellar. La app pregunta cada 20 segundos y no tiene
  *  ningun sentido tocar la hoja en cada vuelta. */
@@ -232,7 +239,10 @@ function leerAutorizados() {
                rol: clean(v[i][2]).toUpperCase() === "SUPERVISOR" ? "SUPERVISOR" : "TECNICO",
                // La fila hace falta para poder sellar el ultimo acceso.
                fila: i + 2,
-               ultimoAcceso: clean(v[i][3]) });
+               ultimoAcceso: clean(v[i][3]),
+               // normNombre() para que "San Cristobal" y "SAN CRISTÓBAL" comparen igual
+               // contra el Cope que guarda cada orden.
+               cope: normNombre(v[i][4]) });
   }
   return out;
 }
@@ -289,7 +299,7 @@ function verificarPase(pase) {
     try { duenio = correoCanonico(Session.getEffectiveUser().getEmail()); }
     catch (eDuenio) { duenio = ""; }
     if (duenio && duenio === correo) {
-      quien = { correo: correo, nombre: "Supervisor", rol: "SUPERVISOR" };
+      quien = { correo: correo, nombre: "Supervisor", rol: "SUPERVISOR", cope: "" };
     }
   }
   if (!quien) return { error: "no_autorizado" };
@@ -299,7 +309,7 @@ function verificarPase(pase) {
   // sello se perderia.
   try { marcarAcceso(quien.fila, quien.ultimoAcceso); } catch (eSello) { /* nunca por encima de entrar */ }
 
-  var id = { correo: quien.correo, nombre: quien.nombre, rol: quien.rol };
+  var id = { correo: quien.correo, nombre: quien.nombre, rol: quien.rol, cope: quien.cope || "" };
   // Cinco minutos como mucho: el permiso se quita borrando una fila de la hoja
   // y eso tiene que surtir efecto pronto, no dentro de una hora.
   var vida = Math.min(300, Number(datos.exp) - ahora);
@@ -497,7 +507,7 @@ function doPost(e) {
   // Listar no escribe en la hoja: no necesita candado.
   if (body.action === "list") {
     try {
-      return respond(conIdentidad(listEntries(esUno(body.full), body.tec), identidad, aviso));
+      return respond(conIdentidad(listEntries(esUno(body.full), body.tec, identidad), identidad, aviso));
     } catch (errList) {
       return respond({ error: String(errList && errList.message ? errList.message : errList) });
     }
@@ -600,11 +610,17 @@ function filaAObjeto(r, completo) {
   return o;
 }
 
-function listEntries(full, tec) {
+function listEntries(full, tec, identidad) {
   var sh = getSheet();
   podarSiTocaHoy(sh);
   var values = leerTodo(sh);
   var entries = [], indice = [], tecs = {}, cuenta = {};
+
+  // Un SUPERVISOR con Cope puesto en Autorizados solo ve ese Cope: entries,
+  // indice, tecnicos y catalogos se recortan mas abajo. Sin Cope (columna
+  // vacia, que es como quedo el supervisor de siempre) o si quien llama no es
+  // SUPERVISOR, no se filtra nada — igual que antes de que esto existiera.
+  var copeSupervisor = (identidad && identidad.rol === "SUPERVISOR" && identidad.cope) ? identidad.cope : "";
 
   // Lo del técnico que abre la app: sus órdenes de la semana en curso y la
   // anterior, ESTÉN O NO archivadas, y el número que le toca. Se filtra aquí y
@@ -620,6 +636,7 @@ function listEntries(full, tec) {
   for (var i = 0; i < values.length; i++) {
     var r = values[i];
     if (!r[idx("ID")]) continue;
+    if (copeSupervisor && normNombre(r[idx("Cope")]) !== copeSupervisor) continue;
     var tec = String(r[idx("Tecnico")]);
     if (tec) tecs[tec] = true;
 
@@ -663,7 +680,12 @@ function listEntries(full, tec) {
   // Si algo falla leyendo los técnicos, la captura NO se cae: la app tiene su
   // propia copia de respaldo.
   var fichas = [];
-  try { fichas = leerTecnicos(); } catch (e) { fichas = []; }
+  try {
+    fichas = leerTecnicos();
+    if (copeSupervisor) {
+      fichas = fichas.filter(function (f) { return normNombre(f.cope) === copeSupervisor; });
+    }
+  } catch (e) { fichas = []; }
 
   var out = { entries: entries, tecnicos: fichas,
               tecnicosConDatos: Object.keys(tecs),
@@ -793,8 +815,10 @@ function updateOrden(body) {
 }
 
 /**
- * Archiva. Con id, una sola orden; con tecnico, todas las suyas que estén a la
- * vista. No borra: escribe la fecha en la columna Copiada.
+ * Archiva. Con id, una sola orden; con ids, exactamente esa lista (lo que usa
+ * el copiado automático: solo lo que de verdad se copió, ni una orden nueva
+ * de más); con tecnico, todas las suyas que estén a la vista. No borra:
+ * escribe la fecha en la columna Copiada.
  */
 function marcarCopiada(body) {
   var sh = getSheet();
@@ -803,12 +827,18 @@ function marcarCopiada(body) {
     Session.getScriptTimeZone() || "America/Mexico_City", "yyyy-MM-dd HH:mm");
   var col = idx("Copiada") + 1;
   var n = 0;
+  var ids = null;
+  if (Array.isArray(body.ids)) {
+    ids = {};
+    for (var k = 0; k < body.ids.length; k++) ids[String(body.ids[k])] = true;
+  }
 
   for (var i = 0; i < values.length; i++) {
     if (!values[i][idx("ID")]) continue;
     if (String(values[i][idx("Copiada")])) continue;
-    var coincide = body.id
-      ? String(values[i][idx("ID")]) === String(body.id)
+    var idFila = String(values[i][idx("ID")]);
+    var coincide = body.id ? (idFila === String(body.id))
+      : ids ? !!ids[idFila]
       : String(values[i][idx("Tecnico")]) === clean(body.tecnico);
     if (!coincide) continue;
     sh.getRange(i + 2, col).setValue(sello);

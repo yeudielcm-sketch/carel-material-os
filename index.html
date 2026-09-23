@@ -1626,21 +1626,19 @@
       return;
     }
     qs("banner-top").innerHTML = "";
-    ORDEN_ACTUAL = o;
-    qs("salida-mensaje").textContent = mensajeWhatsApp(o);
-    irAPaso(1.5);
-  }
 
-  function guardarOrdenYSeguir(){
-    var o = ORDEN_ACTUAL;
-    if(!o) return;
-    var btn = qs("btn-siguiente");
+    // La orden se guarda AQUÍ, al generar el mensaje — no hasta que se le dé
+    // a "capturar material". Así queda ya como capturada en la Hoja aunque el
+    // técnico nunca llegue a poner el material; si lo pone después, es un
+    // updateOrden sobre esta misma fila, no una fila aparte.
+    var btn = qs("btn-generar");
     btn.disabled = true; btn.textContent = "Guardando…";
 
     var payload = Object.assign({}, o);
-    if(EDITANDO){
+    var idYaGuardado = EDITANDO || (ORDEN_ACTUAL && ORDEN_ACTUAL.id);
+    if(idYaGuardado){
       payload.action = "updateOrden";
-      payload.id = EDITANDO;
+      payload.id = idYaGuardado;
     } else {
       payload.action = "addOrden";
       // Clave estable: si la señal se cae después de guardar y el técnico
@@ -1652,27 +1650,39 @@
     }
 
     callApi(payload).then(function(r){
-      var id = EDITANDO || r.id;
+      var id = idYaGuardado || r.id;
       if(r.nFibra){ o.nFibra = r.nFibra; qs("f-nfibra").value = r.nFibra; }
       ORDEN_ACTUAL = Object.assign({}, o, {id:id});
-      qs("paso2-resumen").innerHTML =
-        "<b>Folio " + esc(o.folio) + "</b> — " + esc(o.cliente) +
-        "<br>" + esc(o.metraje) + " metros " + esc(o.acometida) + " · " + esc(o.tipoOs);
-      var previa = STATE.entries.filter(function(e){ return e.id === id; })[0];
-      ponerMaterial(previa);
-      sugerirTensores();
-      irAPaso(2);
+      qs("salida-mensaje").textContent = mensajeWhatsApp(o);
+      irAPaso(1.5);
       return refreshList();
     }).catch(function(err){
       toast("No se pudo guardar la orden — vuelve a intentar.", true);
       qs("banner-top").innerHTML = banner("danger",
-        (err.message === "tecnico_no_dado_de_alta"
+        err.message === "tecnico_no_dado_de_alta"
           ? "Ese nombre no est&aacute; dado de alta, y por eso no se guard&oacute;. Avisa a qui&eacute;n arma el corte."
-          : "No se guardó: " + err.message + ".") +
-        " El mensaje de WhatsApp ya lo puedes copiar igual.");
+          : "No se guardó: " + err.message + ".");
+      window.scrollTo(0,0);
     }).finally(function(){
-      btn.disabled = false; btn.textContent = "Siguiente → capturar material";
+      btn.disabled = false; btn.textContent = "Generar reporte";
     });
+  }
+
+  /**
+   * Ya no guarda nada: la orden se guardó al generar el mensaje. Esto solo
+   * arma la pantalla de material con lo que ya haya (si se está corrigiendo)
+   * o con los valores de siempre (si es nueva).
+   */
+  function irACapturarMaterial(){
+    var o = ORDEN_ACTUAL;
+    if(!o || !o.id) return;
+    qs("paso2-resumen").innerHTML =
+      "<b>Folio " + esc(o.folio) + "</b> — " + esc(o.cliente) +
+      "<br>" + esc(o.metraje) + " metros " + esc(o.acometida) + " · " + esc(o.tipoOs);
+    var previa = STATE.entries.filter(function(e){ return e.id === o.id; })[0];
+    ponerMaterial(previa);
+    sugerirTensores();
+    irAPaso(2);
   }
 
   function guardarMaterial(){
@@ -1705,6 +1715,18 @@
   }
 
   function editarOrden(id){
+    // Si ya se guardó una orden (addOrden/updateOrden) y falta el material,
+    // NO se entra a corregir otra: eso es justo lo que dejó a un técnico
+    // pisando su propia orden por reintentos - el modo edición se queda
+    // activo y el "Guardar" de lo que él cree una orden nueva reescribe la
+    // que ya tenía a medias. Se le manda de vuelta a terminar esa primero.
+    if(ORDEN_ACTUAL && ORDEN_ACTUAL.id){
+      toast("Termina de capturar el material del folio " + ORDEN_ACTUAL.folio +
+            " antes de cambiar de folio o número.", true);
+      activarTab("reportar");
+      irAPaso(2);
+      return;
+    }
     var e = buscarOrden(id);
     if(!e) return;
     if(nombreCanonico(e.tecnico) !== TECNICO){ toast("Esa orden no es tuya.", true); return; }
@@ -2133,7 +2155,14 @@
     });
     body.querySelectorAll("[data-todo]").forEach(function(b){
       b.addEventListener("click", function(){
-        copyText(tsv(filasDe(b.dataset.tec), BLOQUE_AD, parseInt(b.dataset.desde,10)||0), b);
+        var filas = filasDe(b.dataset.tec);
+        copyText(tsv(filas, BLOQUE_AD, parseInt(b.dataset.desde,10)||0), b);
+        var n = filas.length;
+        if(confirm("¿Ya pegaste esto en el Excel?\n\nSe van a archivar " + n +
+                   " orden(es) de " + b.dataset.tec + " — no se borran, solo se " +
+                   "quitan de la lista.")){
+          archivarCopiadas(filas, b.dataset.tec);
+        }
       });
     });
     body.querySelectorAll("[data-ag]").forEach(function(b){
@@ -2162,6 +2191,25 @@
     });
     body.querySelectorAll("[data-copiado]").forEach(function(b){
       b.addEventListener("click", function(){ archivarBloque(b); });
+    });
+  }
+
+  /**
+   * Archiva al confirmar en "Copiar la fila completa A:AD" — antes había que
+   * volver y tocar aparte "Ya lo pegué", y ese paso se olvidaba (una semana
+   * entera se quedó sin archivar). Se manda la lista EXACTA de ids que se
+   * acaban de copiar, no el técnico completo: si entre el copiado y esta
+   * respuesta ya hay una orden nueva sin copiar, esa NO se archiva por
+   * accidente.
+   */
+  function archivarCopiadas(filas, tec){
+    var ids = filas.map(function(e){ return e.id; }).filter(Boolean);
+    if(!ids.length) return;
+    callApi({ action:"marcarCopiada", ids:ids }).then(function(r){
+      toast("Copiado y archivado: " + r.marcadas + " órdenes de " + tec + ".");
+      return refreshList();
+    }).catch(function(){
+      toast("Se copió, pero no se archivó solo — usa «Ya lo pegué» abajo.", true);
     });
   }
 
@@ -2315,7 +2363,7 @@
     qs("btn-copiar-wa").addEventListener("click", function(){
       copyText(qs("salida-mensaje").textContent, qs("btn-copiar-wa"));
     });
-    qs("btn-siguiente").addEventListener("click", guardarOrdenYSeguir);
+    qs("btn-siguiente").addEventListener("click", irACapturarMaterial);
     qs("btn-guardar-material").addEventListener("click", guardarMaterial);
     if(qs("btn-alta")) qs("btn-alta").addEventListener("click", altaTecnico);
     qs("escaner-cerrar").addEventListener("click", cerrarEscaner);
