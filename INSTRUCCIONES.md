@@ -10,9 +10,12 @@ piezas:
 
 ## Estado actual
 
-- **La página ya está publicada** en
-  <https://yeudielcm-sketch.github.io/carel-material-os/> (repo
-  `yeudielcm-sketch/carel-material-os`, GitHub Pages desde `main`, raíz).
+- **La página ya está publicada** en <https://carel.xcellence.com.mx/> (repo
+  `yeudielcm-sketch/carel-material-os`, GitHub Pages desde `main`, raíz, con
+  dominio personalizado en Cloudflare — el nombre de usuario de GitHub ya no
+  aparece en el enlace). La URL vieja de GitHub Pages
+  (`yeudielcm-sketch.github.io/carel-material-os/`) sigue funcionando, pero no
+  se reparte más.
 - **La parte de Google ya está hecha.** El Web App está publicado y la página
   lo tiene conectado.
 - **El acceso con Google está a medio camino, a propósito.** El botón funciona
@@ -78,9 +81,9 @@ Con `?tec=NOMBRE` al final, esa persona ve su nombre fijo cada vez que entra y n
 lo escribe nunca:
 
 ```
-https://yeudielcm-sketch.github.io/carel-material-os/?tec=JULIO%20CESAR%20LOPEZ%20SANCHEZ
-https://yeudielcm-sketch.github.io/carel-material-os/?tec=CARLOS%20DANIEL%20BERMUDEZ
-https://yeudielcm-sketch.github.io/carel-material-os/?tec=MARVIN%20ALEXIS%20MARTINEZ
+https://carel.xcellence.com.mx/?tec=JULIO%20CESAR%20LOPEZ%20SANCHEZ
+https://carel.xcellence.com.mx/?tec=CARLOS%20DANIEL%20BERMUDEZ
+https://carel.xcellence.com.mx/?tec=MARVIN%20ALEXIS%20MARTINEZ
 ```
 
 > **Los `%20` son los espacios y no se pueden quitar.** Si el enlace lleva
@@ -112,7 +115,7 @@ navegador mientras no cierren la pestaña.
 **El enlace de quien arma el Excel es otro**, con `?admin=Supervisor`:
 
 ```
-https://yeudielcm-sketch.github.io/carel-material-os/?admin=Supervisor
+https://carel.xcellence.com.mx/?admin=Supervisor
 ```
 
 Solo ese enlace muestra la pestaña **Módulo de Administrador**, con los botones de copiado y
@@ -207,8 +210,9 @@ se vería como que el acceso está roto.
 ### La credencial de Google
 
 Está en el proyecto de Google Cloud **`carel-material-de-os`**, app
-«CAREL - Material de OS», con `https://yeudielcm-sketch.github.io` como origen
-autorizado.
+«CAREL - Material de OS», con `https://carel.xcellence.com.mx` y
+`https://yeudielcm-sketch.github.io` como orígenes autorizados (el segundo se
+dejó por si algún enlace viejo sigue circulando).
 
 El **ID de cliente** va escrito en `index.html` y en `Code.gs`. **No es un
 secreto**: Google lo publica en toda página que use su botón de acceso, y solo
