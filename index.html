@@ -1987,6 +1987,8 @@
       '<br><br><button class="copybtn destacado" data-corte="1" style="display:inline-flex">' +
         'Copiar TODO el corte <span class="badge">A:AD · '+total+
           (total === 1 ? ' fila' : ' filas')+'</span></button>' +
+      ' <button class="copybtn" data-archivar-corte="1" style="display:inline-flex"'+
+        (total ? '' : ' disabled')+'>Archivar TODO el corte</button>' +
       '<br><br>Nombre del archivo:<br><code>'+esc(nombre)+'.xlsx</code>' +
       '<button class="mini" data-nombre="'+esc(nombre)+'" style="margin-left:8px">copiar</button>' +
       '</div>';
@@ -2153,6 +2155,9 @@
     body.querySelectorAll("[data-corte]").forEach(function(b){
       b.addEventListener("click", function(){ copyText(tsv(filasDelCorte(), BLOQUE_AD, 0), b); });
     });
+    body.querySelectorAll("[data-archivar-corte]").forEach(function(b){
+      b.addEventListener("click", function(){ archivarCorte(b); });
+    });
     body.querySelectorAll("[data-todo]").forEach(function(b){
       b.addEventListener("click", function(){
         var filas = filasDe(b.dataset.tec);
@@ -2210,6 +2215,43 @@
       return refreshList();
     }).catch(function(){
       toast("Se copió, pero no se archivó solo — usa «Ya lo pegué» abajo.", true);
+    });
+  }
+
+  /**
+   * Archiva el corte entero de la plaza que se está viendo. Manda la lista
+   * EXACTA de ids que hay en pantalla (igual que archivarCopiadas): una orden
+   * que llegue mientras tanto, o de otra plaza, NO se archiva por accidente.
+   * Dos toques, como "Ya lo pegué": es masivo y no se deshace desde la página.
+   */
+  function archivarCorte(btn){
+    var filas = filasDelCorte();
+    if(!filas.length) return;
+    var textoOriginal = "Archivar TODO el corte";
+    if(btn.dataset.armed !== "1"){
+      btn.dataset.armed = "1";
+      btn.textContent = "¿Seguro? Se archivan " + filas.length +
+        (filas.length === 1 ? " orden" : " órdenes") + " (no se borran)";
+      btn.style.borderColor = "var(--danger)";
+      btn.style.color = "var(--danger)";
+      setTimeout(function(){
+        if(btn.isConnected){
+          btn.dataset.armed = "0";
+          btn.textContent = textoOriginal;
+          btn.style.borderColor = btn.style.color = "";
+        }
+      }, 4000);
+      return;
+    }
+    var ids = filas.map(function(e){ return e.id; }).filter(Boolean);
+    if(!ids.length) return;
+    btn.disabled = true;
+    callApi({ action:"marcarCopiada", ids:ids }).then(function(r){
+      toast("Archivadas " + r.marcadas + " órdenes del corte.");
+      return refreshList();
+    }).catch(function(){
+      toast("No se pudo archivar — intenta de nuevo.", true);
+      btn.disabled = false;
     });
   }
 
