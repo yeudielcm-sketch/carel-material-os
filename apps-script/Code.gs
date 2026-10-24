@@ -43,7 +43,10 @@ var COLS = [
   "CelReferencia",
   // Sello de la ultima correccion. Comparado con Copiada dice lo unico que
   // importa: si se toco DESPUES de haberse pegado en el Excel.
-  "Editada"
+  "Editada",
+  // Ubicaciones "lat, lon" que se piden con 400 m o mas de metraje. Al final
+  // por lo mismo que CelReferencia: idx() mapea por posicion.
+  "CoordTerminal", "CoordDomicilio"
 ];
 
 // Campos de la orden: clave que usa la app -> columna de la hoja.
@@ -54,7 +57,8 @@ var CAMPOS_ORDEN = {
   direccion: "Direccion", barrio: "Barrio", metraje: "Metraje", acometida: "Acometida",
   fecha: "Fecha", observaciones: "Observaciones", autoriza: "Autoriza",
   nip: "Nip", vigencia: "Vigencia", retiraModem: "RetiraModem",
-  celReferencia: "CelReferencia"
+  celReferencia: "CelReferencia",
+  coordTerminal: "CoordTerminal", coordDomicilio: "CoordDomicilio"
 };
 
 /**
@@ -343,14 +347,15 @@ var COLS_TEC = ["Nombre", "Cope", "Expediente", "Alias"];
 
 /**
  * El ORDEN DE LAS FILAS es el orden en que los técnicos salen en el Excel
- * —CARLOS, MARVIN, JULIO—, que no es alfabético. Para reordenar, se arrastran
+ * —CARLOS, MARVIN, TOMAS (que entró en octubre de 2026 al lugar de JULIO)—,
+ * que no es alfabético. Para reordenar, se arrastran
  * las filas en la hoja. Los alias existen porque en el Excel de 2026 la misma
  * persona aparecía escrita de tres formas.
  */
 var TECNICOS_INICIALES = [
   ["CARLOS DANIEL BERMUDEZ",    "COMITAN", "00917921", ""],
   ["MARVIN ALEXIS MARTINEZ",    "COMITAN", "00831901", "ALEXIS MARTINEZ, MARVIN ALEXIS MARTINEZ CALVO"],
-  ["JULIO CESAR LOPEZ SANCHEZ", "COMITAN", "00746601", ""]
+  ["TOMAS DE JESUS HERNANDEZ ESPINOZA", "COMITAN", "01085991", ""]
 ];
 
 function getHojaTecnicos() {

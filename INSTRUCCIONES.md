@@ -81,7 +81,7 @@ Con `?tec=NOMBRE` al final, esa persona ve su nombre fijo cada vez que entra y n
 lo escribe nunca:
 
 ```
-https://carel.xcellence.com.mx/?tec=JULIO%20CESAR%20LOPEZ%20SANCHEZ
+https://carel.xcellence.com.mx/?tec=TOMAS%20DE%20JESUS%20HERNANDEZ%20ESPINOZA
 https://carel.xcellence.com.mx/?tec=CARLOS%20DANIEL%20BERMUDEZ
 https://carel.xcellence.com.mx/?tec=MARVIN%20ALEXIS%20MARTINEZ
 ```
@@ -234,6 +234,14 @@ Implementar**. La URL no cambia, así que no hay que volver a repartir enlaces.
 
 ## Cosas que conviene saber
 
+- **Con 400 metros o más** la orden pide dos datos extra: la ubicación de la
+  terminal y la del domicilio, en la forma `16.2113457, -92.1154026`. El
+  domicilio tiene un botón «Mi ubicación» que usa el GPS del teléfono; la
+  terminal se pega desde Google Maps. Son obligatorias, la app revisa que caigan
+  en Chiapas, y salen en el mensaje de WhatsApp debajo de `*terminal*` y
+  `*domicilio:*`. Con menos de 400 m esas dos líneas salen vacías, como siempre.
+  Se guardan en las columnas `CoordTerminal` y `CoordDomicilio` de la Hoja, que
+  `getSheet()` agrega sola; no van en el corte al Excel.
 - Los datos quedan en la Hoja, pestaña **«Reportes»**, y se pueden abrir en
   cualquier momento.
 - **Archivar no borra en el acto.** «Archivar este bloque» escribe la fecha en

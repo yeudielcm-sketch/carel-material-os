@@ -252,6 +252,8 @@
   button.scan{flex:none;width:52px;border:1.5px solid var(--line);background:var(--surface-2);
     border-radius:var(--radius-ctl);font-size:20px;cursor:pointer;line-height:1;color:var(--text)}
   button.scan:active{background:var(--accent-soft);border-color:var(--accent)}
+  button.scan.gps{width:auto;padding:0 12px;font-size:13px;font-weight:700;white-space:nowrap}
+  .campo .leyenda{font-size:12.5px;font-weight:700;color:var(--warn);margin-top:5px}
 
   #escaner{position:fixed;inset:0;background:rgba(0,0,0,.86);z-index:60;
     display:flex;align-items:center;justify-content:center;padding:16px}
@@ -520,7 +522,16 @@
     {g:"El trabajo", k:"observaciones",lab:"OBSERVACIONES",     lista:true, mayus:true, ancho:true},
     {g:"El trabajo", k:"autoriza",     lab:"AUTORIZA",          lista:true, mayus:true},
     {g:"El trabajo", k:"nip",          lab:"NIP",               lista:true},
-    {g:"El trabajo", k:"vigencia",     lab:"VIGENCIA",          lista:true, mayus:true}
+    {g:"El trabajo", k:"vigencia",     lab:"VIGENCIA",          lista:true, mayus:true},
+
+    // Solo se piden (y solo salen en el mensaje) con UMBRAL_UBICACIONES metros
+    // o mas. Siempre al final: el grupo se pinta como un fieldset aparte.
+    {g:"Ubicaciones (400 m o más)", k:"coordTerminal",  lab:"UBICACION DE LA TERMINAL",
+     coord:true, ancho:true,
+     ayuda:"Pega aquí las coordenadas copiadas de Google Maps."},
+    {g:"Ubicaciones (400 m o más)", k:"coordDomicilio", lab:"UBICACION DEL DOMICILIO",
+     coord:true, ancho:true, gps:true,
+     leyenda:"Recuerda capturar correctamente el domicilio."}
   ];
 
   // El expediente de COPE es fijo por persona: no cambia de una orden a otra.
@@ -539,7 +550,7 @@
     {nombre:"CARLOS DANIEL BERMUDEZ",    cope:"COMITAN", expediente:"00917921", alias:[]},
     {nombre:"MARVIN ALEXIS MARTINEZ",    cope:"COMITAN", expediente:"00831901",
      alias:["ALEXIS MARTINEZ", "MARVIN ALEXIS MARTINEZ CALVO"]},
-    {nombre:"JULIO CESAR LOPEZ SANCHEZ", cope:"COMITAN", expediente:"00746601", alias:[]}
+    {nombre:"TOMAS DE JESUS HERNANDEZ ESPINOZA", cope:"COMITAN", expediente:"01085991", alias:[]}
   ];
   var TECNICOS = TECNICOS_RESPALDO.slice();
 
@@ -777,8 +788,11 @@
     L.push("*AUTORIZA*  " + o.autoriza);
     L.push("*NIP*  " + o.nip);
     L.push("*VIGENCIA* " + o.vigencia);
+    var conUbicaciones = pideUbicaciones(o.metraje);
     L.push("*terminal* ");
+    if (conUbicaciones && o.coordTerminal) L.push(o.coordTerminal);
     L.push("*domicilio:* ");
+    if (conUbicaciones && o.coordDomicilio) L.push(o.coordDomicilio);
     L.push("*SUBTERRANEO* " + (o.acometida === "SUBTERRANEO" ? "✅" : ""));
     L.push("*AEREO* " + (o.acometida === "AEREO" ? "✅" : ""));
     if (String(o.retiraModem||"").trim()) L.push("Se retira modem: " + o.retiraModem);
@@ -1326,6 +1340,13 @@
       h += '<input type="text" id="o-'+c.k+'" data-otro="'+c.k+'" hidden placeholder="Escribe el valor nuevo" autocomplete="off">';
     } else if(c.fecha){
       h += '<input type="date" id="f-'+c.k+'" data-k="'+c.k+'">';
+    } else if(c.coord){
+      var ic = '<input type="text" id="f-'+c.k+'" data-k="'+c.k+'" class="mono" '
+             + 'placeholder="16.2113457, -92.1154026" autocomplete="off" autocapitalize="off" spellcheck="false">';
+      h += c.gps
+        ? '<div class="conboton">'+ic+'<button type="button" class="scan gps" data-gps="'+c.k+'" '
+          + 'aria-label="Usar mi ubicación">&#128205; Mi ubicación</button></div>'
+        : ic;
     } else {
       var inp = '<input type="text" id="f-'+c.k+'" data-k="'+c.k+'"'
               + (c.numerico ? ' inputmode="numeric" class="mono"' : '')
@@ -1337,8 +1358,9 @@
           + 'aria-label="Escanear código">&#128247;</button></div>'
         : inp;
     }
-    h += '<div class="pista" id="p-'+c.k+'"></div></div>';
-    return h;
+    h += '<div class="pista" id="p-'+c.k+'">'+esc(c.ayuda||"")+'</div>';
+    if(c.leyenda) h += '<div class="leyenda">'+esc(c.leyenda)+'</div>';
+    return h + '</div>';
   }
 
   function cablearCampos(){
@@ -1380,6 +1402,107 @@
     // el metraje sugiere los tensores
     var met = qs("f-metraje");
     if(met) met.addEventListener("change", function(){ sugerirTensores(); });
+    // con 400 m o mas se piden las ubicaciones; "otro…" escribe el metraje a mano
+    var metOtro = qs("o-metraje");
+    [met, metOtro].forEach(function(el){
+      if(el) ["change","input"].forEach(function(ev){
+        el.addEventListener(ev, actualizarUbicaciones);
+      });
+    });
+    CAMPOS.filter(function(c){ return c.coord; }).forEach(function(c){
+      var el = qs("f-"+c.k);
+      if(el) el.addEventListener("change", function(){ revisarUbicacion(c.k); });
+    });
+    qs("form-campos").querySelectorAll("button[data-gps]").forEach(function(b){
+      b.addEventListener("click", function(){ usarMiUbicacion(b.dataset.gps, b); });
+    });
+    actualizarUbicaciones();
+  }
+
+  // ------------------------------------------------------ ubicaciones ---
+
+  // Desde cuantos metros se piden las coordenadas de la terminal y del domicilio.
+  var UMBRAL_UBICACIONES = 400;
+
+  function pideUbicaciones(metraje){
+    return (parseInt(metraje, 10) || 0) >= UMBRAL_UBICACIONES;
+  }
+
+  /**
+   * "16.2113457, -92.1154026" -> {lat, lon, texto}. Acepta la coma, el punto y
+   * coma o solo un espacio entre las dos, y el signo de grados. Exige punto
+   * decimal: sin decimales no es una ubicación, es un número cualquiera.
+   */
+  function coordenadas(texto){
+    var m = String(texto||"").replace(/\u00b0/g, "")
+      .match(/(-?\d{1,3}\.\d+)\s*[,;\s]\s*(-?\d{1,3}\.\d+)/);
+    if(!m) return null;
+    return { lat: parseFloat(m[1]), lon: parseFloat(m[2]), texto: m[1] + ", " + m[2] };
+  }
+
+  // Chiapas con un margen. Lo que atrapa: latitud y longitud al reves, o el
+  // signo menos que se cayo (el error tipico al copiar a mano).
+  function enChiapas(p){
+    return p.lat >= 14 && p.lat <= 18.5 && p.lon >= -94.5 && p.lon <= -90;
+  }
+
+  function mensajeUbicacion(texto){
+    var p = coordenadas(texto);
+    if(!p) return "No se entiende. Deben ser dos números con punto decimal, como 16.2113457, -92.1154026.";
+    if(!enChiapas(p)) return "Esas coordenadas caen fuera de Chiapas: revisa que no estén al revés o que no falte el signo menos.";
+    return "";
+  }
+
+  /** Muestra u oculta el bloque de ubicaciones según el metraje que hay en pantalla. */
+  function actualizarUbicaciones(){
+    var el = qs("f-coordTerminal");
+    if(!el) return;
+    var fs = el.closest("fieldset");
+    if(!fs) return;
+    var pide = pideUbicaciones(leerCampo("metraje"));
+    var estaba = !fs.hidden;
+    fs.hidden = !pide;
+    if(pide && !estaba){
+      pista("metraje", "Con " + UMBRAL_UBICACIONES + " m o más tienes que capturar las ubicaciones, abajo.", true);
+    } else if(!pide){
+      pista("metraje", "");
+    }
+  }
+
+  function revisarUbicacion(k){
+    var el = qs("f-"+k);
+    if(!el) return;
+    var v = el.value.trim();
+    if(!v){ pista(k, k === "coordTerminal" ? "Pega aquí las coordenadas copiadas de Google Maps." : ""); return; }
+    var malo = mensajeUbicacion(v);
+    if(malo){ pista(k, "⚠ " + malo, true); return; }
+    el.value = coordenadas(v).texto;
+    pista(k, "✔ Ubicación leída.");
+  }
+
+  function usarMiUbicacion(k, btn){
+    var el = qs("f-"+k);
+    if(!el) return;
+    if(!navigator.geolocation){
+      pista(k, "⚠ Este navegador no da la ubicación: pega las coordenadas a mano.", true);
+      return;
+    }
+    var txt = btn.innerHTML;
+    btn.disabled = true; btn.textContent = "Buscando…";
+    pista(k, "Buscando tu ubicación…");
+    navigator.geolocation.getCurrentPosition(function(pos){
+      btn.disabled = false; btn.innerHTML = txt;
+      var c = pos.coords;
+      el.value = c.latitude.toFixed(7) + ", " + c.longitude.toFixed(7);
+      var m = Math.round(c.accuracy || 0);
+      if(m > 50) pista(k, "⚠ Ubicación poco precisa (±" + m + " m). Espera unos segundos afuera y vuelve a tocar el botón.", true);
+      else revisarUbicacion(k);
+    }, function(err){
+      btn.disabled = false; btn.innerHTML = txt;
+      pista(k, "⚠ " + (err && err.code === 1
+        ? "El navegador no dio permiso para la ubicación. Pega las coordenadas a mano."
+        : "No se pudo leer la ubicación. Pega las coordenadas a mano."), true);
+    }, { enableHighAccuracy:true, timeout:20000, maximumAge:0 });
   }
 
   function pista(k, texto, esWarn){
@@ -1402,6 +1525,7 @@
       v = el.value;
     }
     v = String(v||"").trim();
+    if(c.coord){ var pc = coordenadas(v); return pc ? pc.texto : v; }
     if(c.mayus) v = normName(v);
     if(c.numerico && k !== "folio") v = digitsOnly(v);
     return v;
@@ -1456,12 +1580,13 @@
     CAMPOS.forEach(function(c){
       var previo = c.recuerda ? (ultimoDelTecnico(c.k) || recordado(c.k)) : "";
       ponerCampo(c.k, c.fecha ? hoyDDMMYYYY() : previo);
-      var nota = "";
+      var nota = c.ayuda || "";
       if(c.fijoDelTecnico && previo) nota = "Es el tuyo, no cambia. Tócalo solo si te lo cambiaron.";
       else if(c.escaneable) nota = motivoSinEscaner();
       pista(c.k, nota);
     });
     if(!leerCampo("acometida")) ponerCampo("acometida", "AEREO");
+    actualizarUbicaciones();
     qs("f-nfibra").value = siguienteNFibra();
     actualizarPistaNFibra();
   }
@@ -1591,6 +1716,13 @@
     var faltan = [];
     CAMPOS.forEach(function(c){ if(c.req && !o[c.k]) faltan.push(c.lab); });
     if(!o.tecnico) faltan.push("TÉCNICO");
+    // Con 400 m o más las dos ubicaciones son obligatorias y tienen que ser válidas.
+    if(pideUbicaciones(o.metraje)){
+      CAMPOS.filter(function(c){ return c.coord; }).forEach(function(c){
+        if(!o[c.k]) faltan.push(c.lab);
+        else if(mensajeUbicacion(o[c.k])) faltan.push(c.lab + " (no es válida)");
+      });
+    }
     return faltan;
   }
 
@@ -1621,7 +1753,7 @@
     var o = leerOrden();
     var faltan = validar(o);
     if(faltan.length){
-      qs("banner-top").innerHTML = banner("warn", "Falta llenar: " + faltan.join(", ") + ".");
+      qs("banner-top").innerHTML = banner("warn", "Falta llenar o corregir: " + faltan.join(", ") + ".");
       window.scrollTo(0,0);
       return;
     }
@@ -1737,6 +1869,7 @@
     ORDEN_ACTUAL = null;
     qs("f-nfibra").value = e.nFibra || 1;
     CAMPOS.forEach(function(c){ ponerCampo(c.k, e[c.k]); pista(c.k,""); });
+    actualizarUbicaciones();
     ponerMaterial(e);
     qs("titulo-paso1").textContent = "Corrigiendo el folio " + e.folio;
     irAPaso(1);
