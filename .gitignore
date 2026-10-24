@@ -4,3 +4,7 @@ Thumbs.db
 *.tmp
 
 # Nada: el PDF y el manual sí se versionan, se generan desde manual/
+
+# Memoria con huecos de acceso abiertos: sube cuando se cierre la Fase 3
+_MEMORIA/DEUDA.md
+_MEMORIA/CONTEXTO-acceso.md

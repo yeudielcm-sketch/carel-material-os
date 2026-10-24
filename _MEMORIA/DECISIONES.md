@@ -1,0 +1,81 @@
+# DECISIONES — CAREL, reporte de OS
+
+Una línea por decisión: `fecha — decisión — porqué`. Solo se agrega al final.
+
+- 2026-08-28 — Los duplicados (folio o teléfono) AVISAN, nunca bloquean — 10 de 12 teléfonos repetidos en 2026 eran órdenes legítimas del mismo domicilio.
+- 2026-08-28 — El mensaje de WhatsApp sale calcado, con líneas vacías y espacios dobles — quien lo lee no debe notar que lo escribe una app.
+- 2026-08-28 — El consecutivo `N FIBRA` es por técnico y se reinicia el lunes.
+- 2026-08-28 — Archivar marca la columna `Copiada`; lo archivado se borra solo a las ocho semanas (`SEMANAS_HISTORIAL = 8`) — el reporte ya vive en el Excel y en el chat.
+- 2026-08-28 — El corte va agrupado por técnico y dentro por fecha creciente, en el orden de las filas de la pestaña `Tecnicos` (no alfabético) — así estaban 60 de 68 archivos de 2026.
+- 2026-08-28 — Un solo nombre por persona (el largo); los alias se traducen al canónico.
+- 2026-08-28 — La plaza es el COPE, no un campo nuevo; con varias, el corte trae selector y el archivo lleva la plaza al final.
+- 2026-08-28 — No se genera el .xlsx: el corte es UN pegado de las 30 columnas `A:AD` encima del archivo anterior — ya trae pestañas y fórmulas.
+- 2026-08-28 — Descartado dar al Sheet la forma del machote — el botón hace la traducción sin otra pieza que mantener.
+- 2026-08-28 — El nombre del archivo lo calcula la app con semana ISO.
+- 2026-08-28 — Dos manuales separados (técnico y corte), sin mezclar; el de arquitectura es PDF generado con reportlab.
+- 2026-08-28 — Columnas nuevas siempre al final de `COLS` — `idx()` mapea por posición.
+- 2026-08-29 — El enlace de administración es `?admin=Supervisor` (no es contraseña, solo evita encontrarlo por casualidad).
+- 2026-08-29 — `CEL DE REFERENCIA` va entre BARRIO y METRAJE, emitido como `*CEL DE REFERENCIA:* número` — la forma sin dos puntos era desliz del técnico.
+- 2026-08-29 — Los técnicos viven en la pestaña `Tecnicos` de la hoja (Nombre, Cope, Expediente, Alias) y se dan de alta desde administración; `index.html` guarda solo una copia de respaldo.
+- 2026-08-30 — Lector de códigos de respaldo (`@zxing/library` 0.21.3) servido desde el repo y descargado solo en teléfonos sin `BarcodeDetector` útil, y solo al tocar la cámara.
+- 2026-09-05 — El consecutivo lo calcula el servidor (`listEntries(full, tec)` → `siguiente`), mirando la semana entera incluida la parte archivada — una descarga fallida ya no propone 1.
+- 2026-09-05 — «Mis órdenes» muestra la semana en curso y la anterior, separadas con su rango de fechas; la anterior solo se consulta y se vuelve a copiar.
+- 2026-09-05 — Las órdenes del técnico se filtran en el servidor (`mias`) — no se le mandan las de los demás.
+- 2026-09-05 — La respuesta de Administración (sin `tec`) no cambia: solo lo que falta procesar — pedido expreso de Yeudiel.
+- 2026-09-05 — La orden de agosto 29 que faltaba la borró Yeudiel a mano; no fue la poda.
+- 2026-09-05 — Toda la semana en curso se corrige, se haya copiado o no; lo que cierra es la semana — pedido de Yeudiel, revierte que yo cerrara lo copiado.
+- 2026-09-05 — Al abrir una ya copiada, un solo aviso: «Esta ya se pasó al Excel: avisa que la corregiste».
+- 2026-09-05 — Columna `Editada` (al final de `COLS`) con el sello de la última corrección, mismo formato que `Copiada`.
+- 2026-09-05 — Solo se marca la orden con `Editada > Copiada`: franja ámbar lateral y etiqueta «corregida después de copiar» en «Mis órdenes» — la corregida antes de copiarse no tiene consecuencia.
+- 2026-09-05 — Sin marca de corregida en la tabla del Módulo de Administrador — esa parte no se toca.
+- 2026-09-05 — El caso «corregida después de enviarse» tiene otro tratamiento fuera de la app; no se aborda aquí.
+- 2026-09-05 — La pestaña de administración se llama «Módulo de Administrador» (antes «Consolidado»), también en documentos.
+- 2026-09-05 — Se ofrece «Instalar» como aplicación (manifest + service worker + iconos); el botón aparece solo mientras no esté instalada, en su propia fila bajo el encabezado.
+- 2026-09-05 — Service worker: la página siempre de la red (la copia es solo para sin señal); lo del Apps Script y Google Fonts no se toca.
+- 2026-09-05 — El nombre del técnico se guarda en `localStorage` al entrar por su enlace — la app instalada abre en `./` sin `?tec=`.
+- 2026-09-05 — Instrucciones manuales según navegador: iPhone (Compartir), navegador de WhatsApp (abrir en el navegador), resto (menú de Chrome).
+- 2026-09-05 — El ícono de la app es el emblema de CAREL, sin el texto (a 48 px no se lee).
+- 2026-09-05 — El emblema va en el marco superior, a la DERECHA y del alto de todo el marco (título, técnico y pestañas) — reparte la carga visual.
+- 2026-09-06 — Diagnóstico y opciones antes que código; no se despliega sin aprobación y se dicen los archivos antes de implementar — regla de Yeudiel para el cierre de la exposición.
+- 2026-09-06 — Ningún token ni secreto compartido en el cliente — la página se sirve desde Pages y todo lo que lleva es público.
+- 2026-09-06 — Rotar la URL `/exec` solo sirve archivando a la vez la implementación vieja, y va al final del cierre — mientras el código sea público, la URL nueva también lo será.
+- 2026-09-06 — Camino elegido: entrar con Google en la propia página (Google Identity Services) y verificar el pase en el servidor contra `tokeninfo`; el `/exec` sigue en «Cualquier usuario» — un Web App que exige cuenta no contesta a `fetch` desde Pages (redirect + CORS).
+- 2026-09-06 — Descartado servir toda la app desde Apps Script (HtmlService) — muy probablemente se pierden la cámara y la instalación como app.
+- 2026-09-06 — El cierre va en tres fases (recortar la respuesta anónima / entrar sin exigir / exigir y rotar) — dejar a un técnico sin capturar es peor que la exposición durante un día.
+- 2026-09-06 — `entries` es lista blanca (`CAMPOS_PUBLICOS`): solo lo que usa el corte; los 23 campos solo en `mias` — el teléfono se queda porque es la columna C del Excel.
+- 2026-09-06 — El NIP no es dato sensible (es la referencia de un cambio de servicio) y se queda en las sugerencias — aclaración de Yeudiel.
+- 2026-09-06 — AUTORIZA no se toca — Yeudiel.
+- 2026-09-06 — Por ahora no hay técnicos con iPhone — Yeudiel.
+- 2026-09-06 — Los correos de los técnicos viven solo en la pestaña `Autorizados` (Correo, Nombre, Rol), llenada a mano; nunca en el repo — el repo es público.
+- 2026-09-06 — Con `Autorizados` vacía solo entra el dueño del script — para poder llenarla sin quedarse fuera.
+- 2026-09-06 — Proyecto de Google Cloud `carel-material-de-os`, app «CAREL - Material de OS», Usuarios externos en modo de prueba, origen `https://yeudielcm-sketch.github.io`, sin URIs de redirección; los cuatro correos como usuarios de prueba — el modo de prueba es una segunda reja.
+- 2026-09-06 — El secreto del cliente OAuth no se copia ni se usa — el flujo de ID token no lo necesita.
+- 2026-09-06 — Yeudiel autorizó aceptar la Política de Datos del Usuario de las APIs de Google, y concedió él mismo el permiso nuevo del script (`UrlFetchApp`).
+- 2026-09-06 — Los correos se comparan en forma canónica: minúsculas, y en Gmail sin puntos ni lo que va tras `+`.
+- 2026-09-06 — La identidad verificada se guarda en caché cinco minutos — dar de baja a alguien tiene que surtir efecto pronto.
+- 2026-09-06 — Con pase, la lectura va por POST; ninguna petición lleva `Content-Type` — un pase en la URL acaba en registros, y el `Content-Type` provoca un OPTIONS que Apps Script no contesta.
+- 2026-09-06 — En la Fase 2 no se rechaza nada ni se recorta por rol — un técnico identificado perdería el aviso de folio repetido y parecería que entrar rompió la app.
+- 2026-09-06 — Se despliega primero Apps Script y después Pages — al revés, quien entra se queda sin lista.
+- 2026-09-06 — Fase 1 y Fase 2 van en commits separados — pedido de Yeudiel.
+- 2026-09-06 — Los enlaces de técnico llevan `%20` — WhatsApp corta el enlace en el primer espacio.
+- 2026-09-06 — Regla dura: nadie captura con un nombre que no esté en la pestaña `Tecnicos`; vive en el servidor (`tecnicoCanonico`) y los alias se guardan con el nombre canónico — pedido de Yeudiel tras el enlace cortado.
+- 2026-09-06 — El alta de técnicos pide el correo de Google y escribe `Tecnicos` y `Autorizados` de un tirón; exige pase de SUPERVISOR — pedido de Yeudiel; sin la reja, cualquiera se autorizaría a sí mismo.
+- 2026-09-06 — Una sola función decide qué es un navegador embebido (`navegadorEmbebido`), con el criterio que ya tenía `comoInstalar()`.
+- 2026-09-06 — El pase va en `localStorage` y se tira si le queda menos de un minuto — `sessionStorage` obligaba a entrar al abrir la app; la hora de vida la pone Google igual.
+- 2026-09-06 — La hora de vida del pase no se puede alargar (la fija Google); se renueva en silencio: 4 s de espera antes del botón, renovación al volver a la vista con 5 min de margen, tope de 3 por carga, y solo se reintenta pase vencido, rechazado o sin verificar — Yeudiel lo prefirió a la sesión propia de 30 días.
+- 2026-09-07 — Del primer paso de la Fase 3 solo se hace la columna `UltimoAcceso` (un sello cada 30 min como mucho); el resto se decide con esos datos — Yeudiel.
+- 2026-09-07 — La Fase 3 no se arranca con uno de tres técnicos entrados — los otros dos se quedarían sin capturar.
+- 2026-09-17 — Se pausa el auditor externo (OpenAI): la cuenta se quedó sin saldo (-$2.91) y el auto-reload está apagado; ya se consumieron ~$13 este mes. Se reactiva cuando se recargue crédito — Yeudiel.
+- 2026-09-22 — El guardado (`addOrden`/`updateOrden`) se dispara al generar el mensaje de WhatsApp, no al pasar a capturar material — un técnico corrigió una orden ya terminada creyendo que era nueva y el guardado le pisó los datos; ahora la orden queda capturada en la Hoja aunque el material se quede sin llenar, y si se llena después es un `updateOrden` sobre la misma fila.
+- 2026-09-22 — Corregir otra orden se bloquea mientras la actual (recién generada o en edición) siga sin terminar su material — mismo incidente; evita que se repita el pisado en silencio. El técnico ve un aviso y vuelve a la pantalla de material pendiente.
+- 2026-09-22 — El botón "Copiar la fila completa A:AD" archiva solo, con una ventana de confirmación (`confirm()`) antes de escribir — Yeudiel pidió confirmación, no archivado silencioso. Se manda la lista exacta de IDs copiados (`marcarCopiada` con `ids`), no el técnico completo, para no archivar de más si hay una orden nueva sin copiar.
+- 2026-09-22 — Los materiales por defecto (argollas 1, taquetes 3, roseta 1, ont 1) se quedan iguales para todos los Cope, incluido San Cristóbal — Yeudiel corrigió una instrucción previa; lo que hacía falta no era cambiar los defaults sino guardar la orden antes de llegar al material (ver decisión de arriba).
+- 2026-09-24 — No había contradicción entre las dos consolas sobre `listEntries` sin `tec`: «recorta a CAMPOS_PUBLICOS» (columnas, desde v10) y «solo lo pendiente de procesar» (filas, sin cambios desde agosto) son dos reglas distintas de la misma función y las dos siguen en el código (`Code.gs`, líneas 672-673) — se cruzaron por escribirse en consolas separadas, no por un cambio real. Ver CONTRADICCIONES.md.
+- 2026-09-24 — El enlace para técnicos y supervisores pasa a `carel.xcellence.com.mx` en vez de `yeudielcm-sketch.github.io/carel-material-os/` — pedido de Yeudiel: que no salga su usuario de GitHub en el enlace que se reparte. CNAME nuevo en Cloudflare («Solo DNS», igual que el resto del dominio), dominio personalizado + Enforce HTTPS en GitHub Pages, y el origen agregado (sin quitar el viejo) en el cliente OAuth de Google Cloud. `enlaceDe()` en `index.html` arma los enlaces con `location.origin`, así que no hizo falta tocar código: en cuanto se sirve desde el dominio nuevo, los enlaces que genera la app también cambian solos.
+- 2026-09-24 — Para pegar código en el editor de Apps Script se prueba primero el reemplazo sobre el modelo de Monaco y `Set-Clipboard` queda como plan B — ninguna consola documentó que Monaco fallara, y `Set-Clipboard` es sensible a la sesión de Windows de cada una; no era una contradicción real entre consolas.
+- 2026-09-24 — La regla de service worker (red primero, `sw.js`) no cambió y no contradice lo visto el 06/09: ese defecto sigue como deuda abierta en DEUDA.md, no como desacuerdo de diseño entre consolas.
+- 2026-09-24 — `?admin=Supervisor` (ver la pestaña del Módulo de Administrador) y el pase real de SUPERVISOR (dar de alta un técnico) son dos candados distintos y los dos siguen vigentes — no había contradicción; lo único pendiente sigue siendo la propuesta de Fase 3 de que el rol de todo el módulo salga del correo verificado.
+- 2026-09-24 — El nombre del técnico solo se guarda en `localStorage` si está dado de alta (regla dura del 2026-09-06): la entrada del 2026-08-29 («siempre se guarda») quedó superada por esa, confirmado en `resolverTecnico` (`index.html:717-727`) — CONTEXTO.md citaba la decisión vieja, ya corregido.
+- 2026-09-24 — La hoja de cálculo se llama «Materiales de Fibra CAREL»; «MATERIALES CAREL» es el nombre del proyecto de Apps Script, no el de la hoja — visto de primera mano por la consola de acceso, no verificable desde el código porque el script está vinculado (`SpreadsheetApp.getActiveSpreadsheet()`).
+- 2026-10-15 — Botón «Archivar TODO el corte» junto a «Copiar TODO el corte» en el resumen del corte (`archivarCorte()` en `index.html`, commit `36e6c11`, en producción en `carel.xcellence.com.mx`): archiva las órdenes de la plaza que se está viendo, mandando la lista exacta de IDs en pantalla (`marcarCopiada` con `ids`, como el archivado al copiar del 2026-09-22) y con confirmación en dos toques de 4 s; no copia nada. `Code.gs` no cambió, así que no hubo versión nueva del Web App — Yeudiel.
+- 2026-10-15 — No se construye el disparador programado del cierre de semana: el archivado con confirmación al copiar la fila completa, más el botón nuevo de arriba, bastan tal como quedaron — Yeudiel. Cierra la duda abierta en DEUDA.md (2026-09-05 y 2026-09-22).
